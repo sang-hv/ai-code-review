@@ -30,7 +30,7 @@ pipeline {
     }
 
     stages {
-        stage('AI Review - Inline') {
+        stage('ArgusReview - Inline') {
             steps {
                 sh '''
                     docker run --rm \
@@ -48,27 +48,27 @@ pipeline {
                       -e VCS__HTTP_CLIENT__API_TOKEN \
                       -e CORE__CONCURRENCY \
                       -v $(pwd):/app \
-                      nikitafilonov/ai-review:latest ai-review run-inline
+                      deha/argus-review:latest run-inline
                 '''
             }
         }
 
-        stage('AI Review - Context') {
+        stage('ArgusReview - Context') {
             steps {
                 sh '''
                     docker run --rm \
                       -v $(pwd):/app \
-                      nikitafilonov/ai-review:latest ai-review run-context
+                      deha/argus-review:latest run-context
                 '''
             }
         }
 
-        stage('AI Review - Summary') {
+        stage('ArgusReview - Summary') {
             steps {
                 sh '''
                     docker run --rm \
                       -v $(pwd):/app \
-                      nikitafilonov/ai-review:latest ai-review run-summary
+                      deha/argus-review:latest run-summary
                 '''
             }
         }

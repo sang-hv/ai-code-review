@@ -1,4 +1,4 @@
-# 📘 AI Review Documentation
+# 📘 ArgusReview Documentation
 
 See these folders for reference templates and full configuration options:
 

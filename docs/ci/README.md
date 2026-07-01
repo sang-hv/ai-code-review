@@ -1,11 +1,11 @@
-# 📘 AI Review CI/CD Integration
+# 📘 ArgusReview CI/CD Integration
 
-This folder contains **ready-to-use CI/CD templates** for running AI Review automatically on **Pull Requests** (GitHub,
+This folder contains **ready-to-use CI/CD templates** for running ArgusReview automatically on **Pull Requests** (GitHub,
 Bitbucket, Jenkins, Bitbucket, Azure DevOps) or **Merge Requests** (GitLab).
 
 Each example shows how to:
 
-- Install and configure AI Review
+- Install and configure ArgusReview
 - Pass LLM and VCS credentials securely via environment variables
 - Trigger inline, summary, or context review commands
 
@@ -13,13 +13,13 @@ Each example shows how to:
 
 ## ⚙️ Supported CI/CD Providers
 
-| Provider     | Template                                 | Description                                                                    |
-|--------------|------------------------------------------|--------------------------------------------------------------------------------|
-| GitHub       | [github.yaml](./github.yaml)             | Manual workflow dispatch from Actions tab                                      |
-| GitLab       | [gitlab.yaml](./gitlab.yaml)             | Manual job trigger in Merge Request pipelines                                  |
-| Jenkins      | [Jenkinsfile](./Jenkinsfile)             | Declarative pipeline with **inline/context/summary** review stages             |
-| Bitbucket    | [bitbucket.yaml](./bitbucket.yaml)       | Manual custom pipeline trigger per Pull Request (supports all AI Review modes) |
-| Azure DevOps | [azure-devops.yaml](./azure-devops.yaml) | Manual or PR-triggered pipeline in **Azure Pipelines**                         |
+| Provider     | Template                                 | Description                                                                          |
+|--------------|------------------------------------------|--------------------------------------------------------------------------------------|
+| GitHub       | [github.yaml](./github.yaml)             | Manual workflow dispatch from Actions tab                                            |
+| GitLab       | [gitlab.yaml](./gitlab.yaml)             | Manual job trigger in Merge Request pipelines                                        |
+| Jenkins      | [Jenkinsfile](./Jenkinsfile)             | Declarative pipeline with **inline/context/summary** review stages                  |
+| Bitbucket    | [bitbucket.yaml](./bitbucket.yaml)       | Manual custom pipeline trigger per Pull Request (supports all ArgusReview modes)     |
+| Azure DevOps | [azure-devops.yaml](./azure-devops.yaml) | Manual or PR-triggered pipeline in **Azure Pipelines**                               |
 
 ---
 

@@ -26,12 +26,13 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install ai-review
-        run: pip install .
+      - name: Install ArgusReview
+        run: python -m pip install .
 
-      - name: Run AI Review
+      - name: Run ArgusReview
         env:
           AI_REVIEW_CONFIG_FILE_YAML: ./ci/review/config.yaml
+          REVIEW_COMMAND: ${{ inputs.review-command }}
 
           LLM__HTTP_CLIENT__API_TOKEN: ${{ secrets.OPENAI_API_KEY }}
           VCS__HTTP_CLIENT__API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,14 +41,22 @@ jobs:
           VCS__PIPELINE__REPO: ${{ github.event.repository.name }}
           VCS__PIPELINE__PULL_NUMBER: ${{ inputs.pull-request-number }}
         run: |
-          ai-review show-config
-          ai-review ${{ inputs.review-command }}
+          argus-review show-config
+          case "$REVIEW_COMMAND" in
+            run|run-inline|run-context|run-summary|run-inline-reply|run-summary-reply|clear-inline|clear-summary)
+              argus-review "$REVIEW_COMMAND"
+              ;;
+            *)
+              echo "Unsupported review-command: $REVIEW_COMMAND" >&2
+              exit 2
+              ;;
+          esac
 
-      - name: Upload AI Review artifacts
+      - name: Upload ArgusReview artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: ai-review-artifacts
+          name: argus-review-artifacts
           path: ./artifacts
           retention-days: 7
 

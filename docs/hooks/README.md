@@ -1,6 +1,6 @@
-# 📘 AI Review Hooks
+# 📘 ArgusReview Hooks
 
-AI Review provides a **lightweight asynchronous hooks system** that lets you subscribe to internal lifecycle events.
+ArgusReview provides a **lightweight asynchronous hooks system** that lets you subscribe to internal lifecycle events.
 
 Hooks allow you to:
 
@@ -15,7 +15,7 @@ review.
 
 ## 🧠 Lifecycle
 
-AI Review triggers hooks at key points in the review pipeline:
+ArgusReview triggers hooks at key points in the review pipeline:
 
 | Stage                   | Hooks                                                                                                   |
 |-------------------------|---------------------------------------------------------------------------------------------------------|
@@ -173,7 +173,7 @@ async def log_duration(result: str, report: CostReportSchema | None):
 
 ## ⚠️ Error Handling
 
-If a callback raises an exception, AI Review logs it safely:
+If a callback raises an exception, ArgusReview logs it safely:
 
 ```text
 Error in ON_INLINE_COMMENT_COMPLETE hook: ValueError('...')

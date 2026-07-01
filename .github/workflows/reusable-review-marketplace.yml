@@ -18,8 +18,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run AI Review
-        uses: Nikita-Filonov/ai-review@v0.68.0
+      - name: Run ArgusReview
+        uses: deha-project/argus-review@v0.68.0
         env:
           AI_REVIEW_CONFIG_FILE_YAML: ./ci/review/config.yaml
 
@@ -32,11 +32,11 @@ jobs:
         with:
           review-command: ${{ inputs.review-command }}
 
-      - name: Upload AI Review artifacts
+      - name: Upload ArgusReview artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: ai-review-artifacts
+          name: argus-review-artifacts
           path: ./artifacts
           retention-days: 7
 

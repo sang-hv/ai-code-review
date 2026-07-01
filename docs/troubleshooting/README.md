@@ -1,7 +1,7 @@
-# 📘 AI Review Troubleshooting
+# 📘 ArgusReview Troubleshooting
 
-This document describes common environment-related issues when running **ai-review**. All cases below are expected Git /
-CI behavior, not bugs in `ai-review`.
+This document describes common environment-related issues when running **argus-review**. All cases below are expected Git /
+CI behavior, not bugs in `argus-review`.
 
 ---
 
@@ -18,7 +18,7 @@ By default, Git escapes non-ASCII paths in diff output (`core.quotepath=true`).
 
 ### Solution
 
-`ai-review` [Docker image](./../../Dockerfile) sets this automatically:
+`argus-review` [Docker image](./../../Dockerfile) sets this automatically:
 
 ```bash
 git config --global core.quotepath false
@@ -42,7 +42,7 @@ One of the compared commits is not present locally. This usually happens due to 
 
 ### Solution
 
-Fetch full Git history before running `ai-review`.
+Fetch full Git history before running `argus-review`.
 
 #### GitHub Actions
 
@@ -64,6 +64,3 @@ Or manually:
 ```bash
 git fetch --unshallow
 ```
-
-
-

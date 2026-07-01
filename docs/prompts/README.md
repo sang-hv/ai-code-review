@@ -1,4 +1,4 @@
-# 📘 AI Review Prompts
+# 📘 ArgusReview Prompts
 
 This folder contains **language-specific prompt templates** for AI Review. Each language has its own subfolder with
 inline and summary review instructions, separated by style (e.g. light, strict).
@@ -190,7 +190,7 @@ Author: @<<review_author_username>>
 
 ## 🌐 Centralized Prompt Management
 
-`ai-review` intentionally does not support remote prompt URLs. This is a deliberate design choice to keep the tool
+`argus-review` intentionally does not support remote prompt URLs. This is a deliberate design choice to keep the tool
 **simple**, **predictable**, **offline-ready**, and **CI/CD-friendly**. Fetching prompts over the network would
 introduce unnecessary complexity — authentication, caching, retries, validation, offline fallback, and more.
 
@@ -203,13 +203,13 @@ itself.
 
 #### 1. Create a shared repository for prompts
 
-If you don’t have one yet, create a new Git repository (e.g. `ai-review-prompts`) and store your prompt files there.
+If you don’t have one yet, create a new Git repository (e.g. `argus-review-prompts`) and store your prompt files there.
 
 For example:
 
 ```text
 ci-cd/templates/
-  └── ai-review/prompts/
+  └── argus-review/prompts/
       ├── inline.md
       ├── context.md
       └── summary.md
@@ -224,7 +224,7 @@ git submodule add https://gitlab.com/ci-cd/templates.git shared-prompts
 After that, your project will include the shared prompts locally:
 
 ```text
-/shared-prompts/ai-review/prompts/
+/shared-prompts/argus-review/prompts/
   ├── inline.md
   ├── context.md
   └── summary.md
@@ -235,11 +235,11 @@ After that, your project will include the shared prompts locally:
 ```yaml
 prompt:
   inline_prompt_files:
-    - ./shared-prompts/ai-review/prompts/inline.md
+    - ./shared-prompts/argus-review/prompts/inline.md
   context_prompt_files:
-    - ./shared-prompts/ai-review/prompts/context.md
+    - ./shared-prompts/argus-review/prompts/context.md
   summary_prompt_files:
-    - ./shared-prompts/ai-review/prompts/summary.md
+    - ./shared-prompts/argus-review/prompts/summary.md
 ```
 
 #### 4. Keep prompts up to date by pulling the latest version of the submodule:
@@ -265,5 +265,5 @@ before_script:
 
 ### 📌 Summary
 
-`ai-review` expects local prompt files and intentionally avoids remote fetching in its core. Using Git submodules gives
+`argus-review` expects local prompt files and intentionally avoids remote fetching in its core. Using Git submodules gives
 you centralized, versioned, reusable prompts today — without adding complexity to the tool.

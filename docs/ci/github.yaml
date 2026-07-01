@@ -1,17 +1,17 @@
 # ===============================
-# AI Review — GitHub Actions Integration
+# ArgusReview — GitHub Actions Integration
 # ===============================
-# This workflow demonstrates how to integrate AI Review
+# This workflow demonstrates how to integrate ArgusReview
 # into your GitHub repository for automated or manual pull request reviews.
 #
 # It can be launched manually from the Actions tab, or configured to trigger
 # automatically for PR events (opened, updated, reopened).
 #
-# Docs: https://github.com/Nikita-Filonov/ai-review
-# Marketplace Action: Nikita-Filonov/ai-review@v0.68.0
+# Docs: https://github.com/deha-project/argus-review
+# Marketplace Action: deha-project/argus-review@v0.68.0
 # ===============================
 
-name: AI Review
+name: ArgusReview
 
 on:
   # Manual trigger from GitHub UI
@@ -38,8 +38,8 @@ on:
         description: "Pull Request number to review"
 
 jobs:
-  ai-review:
-    name: Run AI Review
+  argus-review:
+    name: Run ArgusReview
     runs-on: ubuntu-latest
 
     permissions:
@@ -53,8 +53,8 @@ jobs:
           # Required: fetch full history so that git diff between base and head SHAs works correctly.
           fetch-depth: 0
 
-      - name: Run AI Review
-        uses: Nikita-Filonov/ai-review@v0.68.0
+      - name: Run ArgusReview
+        uses: deha-project/argus-review@v0.68.0
         env:
           # ===============================
           # LLM provider & model

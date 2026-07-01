@@ -1,7 +1,7 @@
 # ===============================
-# AI Review — Azure DevOps Integration
+# ArgusReview — Azure DevOps Integration
 # ===============================
-# Universal pipeline for running AI Review inside Azure Pipelines.
+# Universal pipeline for running ArgusReview inside Azure Pipelines.
 # Can be launched manually with parameters for Pull Request, iteration, and command.
 #
 # Supported commands:
@@ -15,10 +15,10 @@
 #   - clear-summary
 #
 # Requirements:
-#   • Variable group "ai-review-secrets" with:
+#   • Variable group "argus-review-secrets" with:
 #       - LLM__HTTP_CLIENT__API_TOKEN  (e.g., OpenAI API key)
 #       - VCS__HTTP_CLIENT__API_TOKEN  (Azure DevOps PAT with Code → Read & Write permissions)
-#   • Docker image: nikitafilonov/ai-review:latest
+#   • Docker image: deha/argus-review:latest
 # ===============================
 
 trigger: none  # manual run from the UI
@@ -27,7 +27,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  - group: ai-review-secrets  # contains tokens and private keys
+  - group: argus-review-secrets  # contains tokens and private keys
 
 parameters:
   - name: ORGANIZATION
@@ -58,7 +58,7 @@ parameters:
   - name: COMMAND
     type: string
     default: 'run'
-    displayName: 'AI Review command'
+    displayName: 'ArgusReview command'
     values:
       - run
       - run-inline
@@ -71,9 +71,9 @@ parameters:
 
 jobs:
   - job: ai_review
-    displayName: "AI Review"
+    displayName: "ArgusReview"
     container:
-      image: nikitafilonov/ai-review:latest
+      image: deha/argus-review:latest
 
     steps:
       - checkout: self
@@ -81,14 +81,14 @@ jobs:
         displayName: "Checkout repository (full history)"
 
       - script: |
-          echo "🚀 Running AI Review for PR ${{ parameters.PULL_REQUEST_ID }}..."
-          echo "🧠 Using command: ai-review ${{ parameters.COMMAND }}"
+          echo "🚀 Running ArgusReview for PR ${{ parameters.PULL_REQUEST_ID }}..."
+          echo "🧠 Using command: argus-review ${{ parameters.COMMAND }}"
           echo ""
           echo "🔧 Showing effective configuration..."
-          ai-review show-config
+          argus-review show-config
           echo ""
           echo "🧩 Starting review..."
-          ai-review ${{ parameters.COMMAND }}
+          argus-review ${{ parameters.COMMAND }}
         env:
           # ===============================
           # VCS (Azure DevOps context)
@@ -143,4 +143,4 @@ jobs:
           ARTIFACTS__LLM_ENABLED: "false"
           ARTIFACTS__VCS_ENABLED: "false"
 
-        displayName: "Run AI Review"
+        displayName: "Run ArgusReview"

@@ -1,9 +1,9 @@
-name: 'XAI Review'
-author: 'Nikita Filonov'
+name: 'ArgusReview'
+author: 'DEHA'
 branding:
   icon: 'eye'
   color: 'purple'
-description: '🚀 AI-powered code review tool'
+description: 'AI-powered code review tool'
 
 inputs:
   review-command:
@@ -19,12 +19,22 @@ runs:
       with:
         python-version: '3.12'
 
-    - name: Install XAI Review
-      run: pip install --no-cache-dir xai-review==0.68.0
+    - name: Install ArgusReview
+      run: python -m pip install --no-cache-dir "${{ github.action_path }}"
       shell: bash
 
-    - name: Run AI Review
+    - name: Run ArgusReview
+      env:
+        REVIEW_COMMAND: ${{ inputs.review-command }}
       run: |
-        ai-review show-config
-        ai-review ${{ inputs.review-command }}
+        argus-review show-config
+        case "$REVIEW_COMMAND" in
+          run|run-inline|run-context|run-summary|run-inline-reply|run-summary-reply|clear-inline|clear-summary)
+            argus-review "$REVIEW_COMMAND"
+            ;;
+          *)
+            echo "Unsupported review-command: $REVIEW_COMMAND" >&2
+            exit 2
+            ;;
+        esac
       shell: bash

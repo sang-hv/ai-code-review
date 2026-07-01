@@ -1,34 +1,16 @@
-# AI Review
+# ArgusReview
 
 <p align="center">
-  <img src="./docs/assets/logo.png" alt="Axiom logo" width="220" />
+  <img src="./docs/assets/logo.png" alt="ArgusReview logo" width="220" />
 </p>
 
 AI-powered code review tool.
 
-[![CI](https://github.com/Nikita-Filonov/ai-review/actions/workflows/workflow-test.yml/badge.svg)](https://github.com/Nikita-Filonov/ai-review/actions/workflows/workflow-test.yml)
-[![codecov](https://codecov.io/gh/Nikita-Filonov/ai-review/branch/main/graph/badge.svg)](https://codecov.io/gh/Nikita-Filonov/ai-review)
-[![PyPI version](https://img.shields.io/pypi/v/xai-review.svg)](https://pypi.org/project/xai-review/)
-[![License](https://img.shields.io/github/license/Nikita-Filonov/ai-review)](./LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Nikita-Filonov/ai-review?style=social)](https://github.com/Nikita-Filonov/ai-review/stargazers)
-[![Support](https://img.shields.io/badge/Support-Boosty-orange)](https://boosty.to/ai_review)
-
-_Made with ❤️ by [@NikitaFilonov](https://t.me/sound_right)_
-
----
-
-## ❤️ Support AI Review
-
-If AI Review helps you reduce noise in pull requests and saves time in code reviews, consider supporting its
-development.
-
-Your support helps to:
-
-- improve review accuracy and reduce false positives
-- expand integrations (GitHub, GitLab, Azure DevOps, etc.)
-- develop new features and maintain the project
-
-👉 https://boosty.to/ai_review
+[![CI](https://github.com/deha-project/argus-review/actions/workflows/workflow-test.yml/badge.svg)](https://github.com/deha-project/argus-review/actions/workflows/workflow-test.yml)
+[![codecov](https://codecov.io/gh/deha-project/argus-review/branch/main/graph/badge.svg)](https://codecov.io/gh/deha-project/argus-review)
+[![PyPI version](https://img.shields.io/pypi/v/argus-review.svg)](https://pypi.org/project/argus-review/)
+[![License](https://img.shields.io/github/license/deha-project/argus-review)](./LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/deha-project/argus-review?style=social)](https://github.com/deha-project/argus-review/stargazers)
 
 ---
 
@@ -47,7 +29,7 @@ Your support helps to:
 
 ## ✨ About
 
-**AI Review** is a developer tool that brings **AI-powered code review** directly into your workflow. It helps teams
+**ArgusReview** is a developer tool that brings **AI-powered code review** directly into your workflow. It helps teams
 improve code quality, enforce consistency, and speed up the review process.
 
 ✨ Key features:
@@ -56,15 +38,15 @@ improve code quality, enforce consistency, and speed up the review process.
   **OpenRouter**, or **Azure OpenAI** and switch anytime.
 - **VCS integration** — works out of the box with **GitLab**, **GitHub**, **Bitbucket Cloud**, **Bitbucket Server**,
   **Azure DevOps**, and **Gitea**.
-- **Customizable prompts** — adapt inline, context, and summary reviews to match your team’s coding guidelines.
+- **Customizable prompts** — adapt inline, context, and summary reviews to match your team's coding guidelines.
 - **Agent mode** — iterative ReAct-style loop where the model can **explore the repository** with shell commands
   (`ls`, `cat`, `rg`, `git`) before producing a final review, giving it deeper context than a single-shot call.
 - **Reply modes** — AI can now **participate in existing review threads**, adding follow-up replies in both inline and
   summary discussions.
 - **Flexible configuration** — supports `YAML`, `JSON`, and `ENV`, with seamless overrides in CI/CD pipelines.
-- **AI Review runs fully client-side** — it never proxies or inspects your requests.
+- **ArgusReview runs fully client-side** — it never proxies or inspects your requests.
 
-AI Review runs automatically in your CI/CD pipeline and posts both **inline comments**, **summary reviews**, and now
+ArgusReview runs automatically in your CI/CD pipeline and posts both **inline comments**, **summary reviews**, and now
 **AI-generated replies** directly inside your merge requests. With **agent mode** enabled, the model can autonomously
 explore the codebase before reviewing, resulting in more accurate and context-aware feedback. This makes reviews faster,
 more conversational, and still fully under human control.
@@ -73,25 +55,25 @@ more conversational, and still fully under human control.
 
 ## 🧪 Live Preview
 
-Curious how **AI Review** works in practice? Here are three real Pull Requests reviewed entirely by the tool — one per
+Curious how **ArgusReview** works in practice? Here are real Pull Requests reviewed entirely by the tool — one per
 mode:
 
-| Mode             | Description                                                                                                                                  | 🐙 GitHub                                                             | 🦊 GitLab                                                                  | 🪣 Bitbucket                                                                        |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| 🧩 Inline        | Adds **line-by-line comments** directly in the diff. Focuses on specific code changes.                                                       | [View on GitHub](https://github.com/Nikita-Filonov/ai-review/pull/4)  | [View on GitLab](https://gitlab.com/core8332439/review/-/merge_requests/2) | [View on Bitbucket](https://bitbucket.org/test-5183/test-ai-review/pull-requests/2) |
-| 🧠 Context       | Performs a **broader analysis across multiple files**, detecting cross-file issues and inconsistencies.                                      | [View on GitHub](https://github.com/Nikita-Filonov/ai-review/pull/5)  | [View on GitLab](https://gitlab.com/core8332439/review/-/merge_requests/3) | [View on Bitbucket](https://bitbucket.org/test-5183/test-ai-review/pull-requests/3) |
-| 📄 Summary       | Posts a **concise high-level summary** with key highlights, strengths, and major issues.                                                     | [View on GitHub](https://github.com/Nikita-Filonov/ai-review/pull/6)  | [View on GitLab](https://gitlab.com/core8332439/review/-/merge_requests/4) | [View on Bitbucket](https://bitbucket.org/test-5183/test-ai-review/pull-requests/4) |
-| 💬 Inline Reply  | Generates a **context-aware reply** to an existing inline comment thread. Can clarify decisions, propose fixes, or provide code suggestions. | [View on GitHub](https://github.com/Nikita-Filonov/ai-review/pull/16) | [View on GitLab](https://gitlab.com/core8332439/review/-/merge_requests/5) | [View on Bitbucket](https://bitbucket.org/test-5183/test-ai-review/pull-requests/5) |
-| 💬 Summary Reply | Continues the **summary-level review discussion**, responding to reviewer comments with clarifications, rationale, or actionable next steps. | [View on GitHub](https://github.com/Nikita-Filonov/ai-review/pull/17) | [View on GitLab](https://gitlab.com/core8332439/review/-/merge_requests/6) | [View on Bitbucket](https://bitbucket.org/test-5183/test-ai-review/pull-requests/6) |
+| Mode             | Description                                                                                                                                  |
+|------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| 🧩 Inline        | Adds **line-by-line comments** directly in the diff. Focuses on specific code changes.                                                       |
+| 🧠 Context       | Performs a **broader analysis across multiple files**, detecting cross-file issues and inconsistencies.                                      |
+| 📄 Summary       | Posts a **concise high-level summary** with key highlights, strengths, and major issues.                                                     |
+| 💬 Inline Reply  | Generates a **context-aware reply** to an existing inline comment thread. Can clarify decisions, propose fixes, or provide code suggestions. |
+| 💬 Summary Reply | Continues the **summary-level review discussion**, responding to reviewer comments with clarifications, rationale, or actionable next steps. |
 
 👉 Each review was generated automatically via GitHub Actions using the corresponding mode:
 
 ```bash
-ai-review run-inline
-ai-review run-summary
-ai-review run-context
-ai-review run-inline-reply
-ai-review run-summary-reply
+argus-review run-inline
+argus-review run-summary
+argus-review run-context
+argus-review run-inline-reply
+argus-review run-summary-reply
 ```
 
 ---
@@ -101,20 +83,20 @@ ai-review run-summary-reply
 Install via **pip**:
 
 ```bash
-pip install xai-review
+pip install argus-review
 ```
 
-📦 Available on [PyPI](https://pypi.org/project/xai-review/)
+📦 Available on [PyPI](https://pypi.org/project/argus-review/)
 
 ---
 
 Or run directly via Docker:
 
 ```bash
-docker run --rm -v $(pwd):/app nikitafilonov/ai-review:latest ai-review run-summary
+docker run --rm -v $(pwd):/app deha/argus-review:latest run-summary
 ```
 
-🐳 Pull from [DockerHub](https://hub.docker.com/r/nikitafilonov/ai-review)
+🐳 Pull from [DockerHub](https://hub.docker.com/r/deha/argus-review)
 
 👉 Before running, create a basic configuration file [.ai-review.yaml](./docs/configs/.ai-review.yaml) in the root of
 your project:
@@ -148,21 +130,21 @@ vcs:
 
 👉 This will:
 
-- Run AI Review against your codebase.
+- Run ArgusReview against your codebase.
 - Generate inline and/or summary comments (depending on the selected mode).
 - Use your chosen LLM provider (OpenAI GPT-4o-mini in this example).
 
-> **Note:** Running `ai-review run` executes the full review (inline + summary).
+> **Note:** Running `argus-review run` executes the full review (inline + summary).
 > To run only one mode, use the dedicated subcommands:
-> - ai-review run-inline
-> - ai-review run-context
-> - ai-review run-summary
-> - ai-review run-inline-reply
-> - ai-review run-summary-reply
+> - argus-review run-inline
+> - argus-review run-context
+> - argus-review run-summary
+> - argus-review run-inline-reply
+> - argus-review run-summary-reply
 
 ---
 
-AI Review can be configured via `.ai-review.yaml`, `.ai-review.json`, or `.env`. See [./docs/configs](./docs/configs)
+ArgusReview can be configured via `.ai-review.yaml`, `.ai-review.json`, or `.env`. See [./docs/configs](./docs/configs)
 for complete, ready-to-use examples.
 
 Key things you can customize:
@@ -182,8 +164,8 @@ timeouts, artifacts, logging, etc.).
 
 ## ⚙️ CI/CD Integration
 
-AI Review works out-of-the-box with major CI providers.
-Use these snippets to run AI Review automatically on Pull/Merge Requests.  
+ArgusReview works out-of-the-box with major CI providers.
+Use these snippets to run ArgusReview automatically on Pull/Merge Requests.  
 Each integration uses environment variables for LLM and VCS configuration.
 
 > For full configuration details (timeouts, artifacts, logging, prompt overrides), see [./docs/configs](./docs/configs).
@@ -193,7 +175,7 @@ Each integration uses environment variables for LLM and VCS configuration.
 Add a workflow like this (manual trigger from **Actions** tab):
 
 ```yaml
-name: AI Review
+name: ArgusReview
 
 on:
   workflow_dispatch:
@@ -214,14 +196,14 @@ on:
         type: string
         required: true
 jobs:
-  ai-review:
+  argus-review:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: Nikita-Filonov/ai-review@v0.68.0
+      - uses: deha-project/argus-review@v0.68.0
         with:
           review-command: ${{ inputs.review-command }}
         env:
@@ -250,14 +232,14 @@ jobs:
 For GitLab users:
 
 ```yaml
-ai-review:
+argus-review:
   when: manual
   stage: review
-  image: nikitafilonov/ai-review:latest
+  image: deha/argus-review:latest
   rules:
     - if: '$CI_MERGE_REQUEST_IID'
   script:
-    - ai-review run
+    - argus-review run
   variables:
     # --- LLM configuration ---
     LLM__PROVIDER: "OPENAI"
@@ -273,7 +255,7 @@ ai-review:
     VCS__PIPELINE__MERGE_REQUEST_ID: "$CI_MERGE_REQUEST_IID"
     VCS__HTTP_CLIENT__API_URL: "$CI_SERVER_URL"
     VCS__HTTP_CLIENT__API_TOKEN: "$CI_JOB_TOKEN"
-  allow_failure: true  # Optional: don't block pipeline if AI review fails
+  allow_failure: true  # Optional: don't block pipeline if ArgusReview fails
 
 ```
 
@@ -296,7 +278,7 @@ See these folders for reference templates and full configuration options:
 
 ## ⚠️ Privacy & Responsibility Notice
 
-AI Review does **not store**, **log**, or **transmit** your source code to any external service other than the **LLM
+ArgusReview does **not store**, **log**, or **transmit** your source code to any external service other than the **LLM
 provider** explicitly configured in your `.ai-review.yaml`.
 
 All data is sent **directly** from your CI/CD environment to the selected LLM API endpoint (e.g. OpenAI, Gemini,
@@ -312,7 +294,7 @@ inside your infrastructure.
 
 ---
 
-🧠 **AI Review** — open-source AI-powered code reviewer
+🧠 **ArgusReview** — open-source AI-powered code reviewer
 
-- 📦 [PyPI](https://pypi.org/project/xai-review/)
-- 🐳 [DockerHub](https://hub.docker.com/r/nikitafilonov/ai-review)
+- 📦 [PyPI](https://pypi.org/project/argus-review/)
+- 🐳 [DockerHub](https://hub.docker.com/r/deha/argus-review)

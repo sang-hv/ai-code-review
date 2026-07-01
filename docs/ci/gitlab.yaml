@@ -1,12 +1,12 @@
-.ai-review-base:
+.argus-review-base:
   tags: [ build ]
   when: manual
   stage: review
-  image: nikitafilonov/ai-review:latest
+  image: deha/argus-review:latest
   rules:
     - if: '$CI_MERGE_REQUEST_IID'
   script:
-    - ai-review run
+    - argus-review run
   variables:
     # Required: fetch full history so that git diff between base and head SHAs works correctly.
     GIT_DEPTH: 0
@@ -276,37 +276,37 @@
   allow_failure: true  # Optional: don't block pipeline if AI review fails
 
 
-.ai-review-inline:
+.argus-review-inline:
   script:
-    - ai-review run-inline
-  extends: .ai-review-base
+    - argus-review run-inline
+  extends: .argus-review-base
 
-.ai-review-context:
+.argus-review-context:
   script:
-    - ai-review run-context
-  extends: .ai-review-base
+    - argus-review run-context
+  extends: .argus-review-base
 
-.ai-review-summary:
+.argus-review-summary:
   script:
-    - ai-review run-summary
-  extends: .ai-review-base
+    - argus-review run-summary
+  extends: .argus-review-base
 
-.ai-review-inline-reply:
+.argus-review-inline-reply:
   script:
-    - ai-review run-inline-reply
-  extends: .ai-review-base
+    - argus-review run-inline-reply
+  extends: .argus-review-base
 
-.ai-review-summary-reply:
+.argus-review-summary-reply:
   script:
-    - ai-review run-summary-reply
-  extends: .ai-review-base
+    - argus-review run-summary-reply
+  extends: .argus-review-base
 
-.ai-review-clear-inline:
+.argus-review-clear-inline:
   script:
-    - ai-review clear-inline
-  extends: .ai-review-base
+    - argus-review clear-inline
+  extends: .argus-review-base
 
-.ai-review-clear-summary:
+.argus-review-clear-summary:
   script:
-    - ai-review clear-summary
-  extends: .ai-review-base
+    - argus-review clear-summary
+  extends: .argus-review-base

@@ -1,8 +1,8 @@
 # ============================================
-# Bitbucket Pipelines configuration for AI Review
+# Bitbucket Pipelines configuration for ArgusReview
 # ============================================
 
-image: nikitafilonov/ai-review:latest
+image: deha/argus-review:latest
 
 options:
   size: 2x
@@ -13,12 +13,12 @@ options:
 # --------------------------------------------
 definitions:
   steps:
-    - step: &ai-review-base
-        name: "AI Review (Base)"
+    - step: &argus-review-base
+        name: "ArgusReview (Base)"
         trigger: manual
         script:
-          - echo "🚀 Starting AI Review for Bitbucket PR..."
-          - ai-review run
+          - echo "🚀 Starting ArgusReview for Bitbucket PR..."
+          - argus-review run
         variables:
           # ===============================
           # LLM provider & model
@@ -96,67 +96,67 @@ pipelines:
       - step:
           name: "Init pipeline"
           script:
-            - echo "Initializing Bitbucket AI Review..."
+            - echo "Initializing Bitbucket ArgusReview..."
 
   custom:
     # Run full review
-    ai-review-all:
+    argus-review-all:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (All)"
+          <<: *argus-review-base
+          name: "ArgusReview (All)"
           script:
-            - ai-review run
+            - argus-review run
 
     # Inline review only
-    ai-review-inline:
+    argus-review-inline:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (Inline)"
+          <<: *argus-review-base
+          name: "ArgusReview (Inline)"
           script:
-            - ai-review run-inline
+            - argus-review run-inline
 
     # Context review only
-    ai-review-context:
+    argus-review-context:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (Context)"
+          <<: *argus-review-base
+          name: "ArgusReview (Context)"
           script:
-            - ai-review run-context
+            - argus-review run-context
 
     # Summary review
-    ai-review-summary:
+    argus-review-summary:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (Summary)"
+          <<: *argus-review-base
+          name: "ArgusReview (Summary)"
           script:
-            - ai-review run-summary
+            - argus-review run-summary
 
     # Inline reply mode
-    ai-review-inline-reply:
+    argus-review-inline-reply:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (Inline Reply)"
+          <<: *argus-review-base
+          name: "ArgusReview (Inline Reply)"
           script:
-            - ai-review run-inline-reply
+            - argus-review run-inline-reply
 
     # Summary reply mode
-    ai-review-summary-reply:
+    argus-review-summary-reply:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (Summary Reply)"
+          <<: *argus-review-base
+          name: "ArgusReview (Summary Reply)"
           script:
-            - ai-review run-summary-reply
+            - argus-review run-summary-reply
 
-    ai-review-clear-inline:
+    argus-review-clear-inline:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (Clear Inline Comments)"
+          <<: *argus-review-base
+          name: "ArgusReview (Clear Inline Comments)"
           script:
-            - ai-review clear-inline
+            - argus-review clear-inline
 
-    ai-review-clear-summary:
+    argus-review-clear-summary:
       - step:
-          <<: *ai-review-base
-          name: "AI Review (Clear Summary Comments)"
+          <<: *argus-review-base
+          name: "ArgusReview (Clear Summary Comments)"
           script:
-            - ai-review clear-summary
+            - argus-review clear-summary

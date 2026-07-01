@@ -1,5 +1,5 @@
 # ===============================
-# AI Review configuration file
+# ArgusReview configuration file
 # ===============================
 
 llm:
@@ -47,7 +47,7 @@ llm:
     # model: anthropic/claude-3.5-sonnet   # or any other available model
     # max_tokens: 1200
     # temperature: 0.3
-    # title: "AI Review"                   # (optional) project title for analytics
+    # title: "ArgusReview"                   # (optional) project title for analytics
     # referer: "https://your-domain.com"   # (optional) referer URL for analytics
 
     # --- Azure OpenAI ---
@@ -445,7 +445,7 @@ prompt:
   # system_inline_reply_prompt_files (joined in order).
   # These define the *contract* with the model for inline reply generation:
   # - enforce plain-text output (single reply per thread),
-  # - restrict replies only to comments authored by AI Review,
+  # - restrict replies only to comments authored by ArgusReview,
   # - define response tone and content structure.
   #
   # Defaults (if not defined):
@@ -477,7 +477,7 @@ prompt:
   # system_summary_reply_prompt_files (joined in order).
   # These define the *contract* with the model for summary reply generation:
   # - enforce plain-text output,
-  # - restrict replies to summary threads started by AI Review,
+  # - restrict replies to summary threads started by ArgusReview,
   # - define reply tone (short, factual, concise).
   #
   # Defaults (if not defined):

@@ -6,8 +6,13 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y bash ca-certificates curl git libexpat1 openssh-client ripgrep && \
     rm -rf /var/lib/apt/lists/*
+
 RUN git config --global --add safe.directory '*'
 RUN git config --global core.quotepath false
 
-ARG AI_REVIEW_VERSION
-RUN pip install --no-cache-dir xai-review==${AI_REVIEW_VERSION}
+COPY pyproject.toml README.md LICENSE ./
+COPY argus_review ./argus_review
+
+RUN pip install --no-cache-dir .
+
+ENTRYPOINT ["argus-review"]

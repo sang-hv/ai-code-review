@@ -1,6 +1,6 @@
-# 📘 AI Review Configuration
+# 📘 ArgusReview Configuration
 
-AI Review supports multiple configuration formats and sources. All of them are automatically detected at runtime.
+ArgusReview supports multiple configuration formats and sources. All of them are automatically detected at runtime.
 
 ---
 
