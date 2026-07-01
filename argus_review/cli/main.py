@@ -12,7 +12,7 @@ from argus_review.cli.commands.run_summary_reply_review import run_summary_reply
 from argus_review.cli.commands.run_summary_review import run_summary_review_command
 from argus_review.config import settings
 
-app = typer.Typer(help="AI Review CLI")
+app = typer.Typer(help="ArgusReview CLI")
 
 
 @app.command("run")
@@ -81,7 +81,7 @@ def clear_summary():
 @app.command("show-config")
 def show_config():
     """Show the current resolved configuration"""
-    typer.secho("Loaded AI Review configuration:", fg=typer.colors.CYAN, bold=True)
+    typer.secho("Loaded ArgusReview configuration:", fg=typer.colors.CYAN, bold=True)
     typer.echo(settings.model_dump_json(indent=2, exclude_none=True))
 
 
