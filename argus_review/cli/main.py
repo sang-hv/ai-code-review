@@ -2,22 +2,14 @@ import asyncio
 
 import typer
 
-from argus_review.cli.commands.run_clear_inline_review import run_clear_inline_review
-from argus_review.cli.commands.run_clear_summary_review import run_clear_summary_review
-from argus_review.cli.commands.run_context_review import run_context_review_command
-from argus_review.cli.commands.run_inline_reply_review import run_inline_reply_review_command
-from argus_review.cli.commands.run_inline_review import run_inline_review_command
-from argus_review.cli.commands.run_review import run_review_command
-from argus_review.cli.commands.run_summary_reply_review import run_summary_reply_review_command
-from argus_review.cli.commands.run_summary_review import run_summary_review_command
-from argus_review.config import settings
-
 app = typer.Typer(help="ArgusReview CLI")
 
 
 @app.command("run")
 def run():
     """Run the full AI review pipeline"""
+    from argus_review.cli.commands.run_review import run_review_command
+
     typer.secho("Starting full AI review...", fg=typer.colors.CYAN, bold=True)
     asyncio.run(run_review_command())
     typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
@@ -26,6 +18,8 @@ def run():
 @app.command("run-inline")
 def run_inline():
     """Run only the inline review"""
+    from argus_review.cli.commands.run_inline_review import run_inline_review_command
+
     typer.secho("Starting inline AI review...", fg=typer.colors.CYAN)
     asyncio.run(run_inline_review_command())
     typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
@@ -34,6 +28,8 @@ def run_inline():
 @app.command("run-context")
 def run_context():
     """Run only the context review"""
+    from argus_review.cli.commands.run_context_review import run_context_review_command
+
     typer.secho("Starting context AI review...", fg=typer.colors.CYAN)
     asyncio.run(run_context_review_command())
     typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
@@ -42,6 +38,8 @@ def run_context():
 @app.command("run-summary")
 def run_summary():
     """Run only the summary review"""
+    from argus_review.cli.commands.run_summary_review import run_summary_review_command
+
     typer.secho("Starting summary AI review...", fg=typer.colors.CYAN)
     asyncio.run(run_summary_review_command())
     typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
@@ -50,6 +48,8 @@ def run_summary():
 @app.command("run-inline-reply")
 def run_inline_reply():
     """Run only the inline reply review"""
+    from argus_review.cli.commands.run_inline_reply_review import run_inline_reply_review_command
+
     typer.secho("Starting inline reply AI review...", fg=typer.colors.CYAN)
     asyncio.run(run_inline_reply_review_command())
     typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
@@ -57,6 +57,8 @@ def run_inline_reply():
 
 @app.command("run-summary-reply")
 def run_summary_reply():
+    from argus_review.cli.commands.run_summary_reply_review import run_summary_reply_review_command
+
     typer.secho("Starting summary reply AI review...", fg=typer.colors.CYAN)
     asyncio.run(run_summary_reply_review_command())
     typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
@@ -65,6 +67,8 @@ def run_summary_reply():
 @app.command("clear-inline")
 def clear_inline():
     """Remove all AI-generated inline review comments"""
+    from argus_review.cli.commands.run_clear_inline_review import run_clear_inline_review
+
     typer.secho("Clearing inline AI review comments...", fg=typer.colors.YELLOW)
     asyncio.run(run_clear_inline_review())
     typer.secho("Inline AI comments cleared", fg=typer.colors.GREEN, bold=True)
@@ -73,6 +77,8 @@ def clear_inline():
 @app.command("clear-summary")
 def clear_summary():
     """Remove all AI-generated summary review comments"""
+    from argus_review.cli.commands.run_clear_summary_review import run_clear_summary_review
+
     typer.secho("Clearing summary AI review comments...", fg=typer.colors.YELLOW)
     asyncio.run(run_clear_summary_review())
     typer.secho("Summary AI comments cleared", fg=typer.colors.GREEN, bold=True)
@@ -81,6 +87,8 @@ def clear_summary():
 @app.command("show-config")
 def show_config():
     """Show the current resolved configuration"""
+    from argus_review.config import settings
+
     typer.secho("Loaded ArgusReview configuration:", fg=typer.colors.CYAN, bold=True)
     typer.echo(settings.model_dump_json(indent=2, exclude_none=True))
 
