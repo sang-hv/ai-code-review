@@ -38,9 +38,9 @@ Hooks are registered via decorators from the global hook instance:
 
 ```python
 # ./hooks.py
-from ai_review.services.cost.schema import CostReportSchema
-from ai_review.services.hook import hook
-from ai_review.services.review.internal.inline.schema import InlineCommentSchema
+from argus_review.services.cost.schema import CostReportSchema
+from argus_review.services.hook import hook
+from argus_review.services.review.internal.inline.schema import InlineCommentSchema
 
 
 @hook.on_chat_start
@@ -151,8 +151,8 @@ You can collect timing and cost information using chat hooks:
 ```python
 import time
 
-from ai_review.services.cost.schema import CostReportSchema
-from ai_review.services.hook import hook
+from argus_review.services.cost.schema import CostReportSchema
+from argus_review.services.hook import hook
 
 
 @hook.on_chat_start

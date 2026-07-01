@@ -5,10 +5,10 @@ inline and summary review instructions, separated by style (e.g. light, strict).
 
 Prompts extend the built-in system templates:
 
-- [default_system_agent.md](../../ai_review/prompts/default_system_agent.md)
-- [default_system_inline.md](../../ai_review/prompts/default_system_inline.md)
-- [default_system_summary.md](../../ai_review/prompts/default_system_summary.md)
-- [default_system_context.md](../../ai_review/prompts/default_system_context.md)
+- [default_system_agent.md](../../argus_review/prompts/default_system_agent.md)
+- [default_system_inline.md](../../argus_review/prompts/default_system_inline.md)
+- [default_system_summary.md](../../argus_review/prompts/default_system_summary.md)
+- [default_system_context.md](../../argus_review/prompts/default_system_context.md)
 
 and define the style, tone, and structure of the review.
 
