@@ -1,0 +1,16 @@
+This project is a fork of "ArgusReview" (itself a fork/rebrand of the original
+"ai-review" project by Nikita Filonov), licensed under the Apache License,
+Version 2.0.
+
+Original work:
+  Copyright 2025 Nikita Filonov
+  https://github.com/Nikita-Filonov/ai-review
+
+Intermediate fork ("ArgusReview" / DEHA):
+  https://github.com/deha-project/argus-review
+
+Modifications and additions in this fork:
+  Copyright 2026 sanghv (sang-hv)
+  https://github.com/sang-hv/ai-code-review
+
+See the LICENSE file for the full Apache License, Version 2.0 text.

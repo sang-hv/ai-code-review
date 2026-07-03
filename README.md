@@ -6,11 +6,13 @@
 
 AI-powered code review tool.
 
-[![CI](https://github.com/deha-project/argus-review/actions/workflows/workflow-test.yml/badge.svg)](https://github.com/deha-project/argus-review/actions/workflows/workflow-test.yml)
-[![codecov](https://codecov.io/gh/deha-project/argus-review/branch/main/graph/badge.svg)](https://codecov.io/gh/deha-project/argus-review)
-[![PyPI version](https://img.shields.io/pypi/v/argus-review.svg)](https://pypi.org/project/argus-review/)
-[![License](https://img.shields.io/github/license/deha-project/argus-review)](./LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/deha-project/argus-review?style=social)](https://github.com/deha-project/argus-review/stargazers)
+> This is a personal fork ([sang-hv/ai-code-review](https://github.com/sang-hv/ai-code-review)) of ArgusReview
+> (originally [ai-review by Nikita Filonov](https://github.com/Nikita-Filonov/ai-review), rebranded by
+> [deha-project](https://github.com/deha-project/argus-review)). See [NOTICE](./NOTICE) for full attribution.
+
+[![CI](https://github.com/sang-hv/ai-code-review/actions/workflows/workflow-test.yml/badge.svg)](https://github.com/sang-hv/ai-code-review/actions/workflows/workflow-test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/argus-review-code.svg)](https://pypi.org/project/argus-review-code/)
+[![License](https://img.shields.io/github/license/sang-hv/ai-code-review)](./LICENSE)
 
 ---
 
@@ -35,7 +37,10 @@ improve code quality, enforce consistency, and speed up the review process.
 ✨ Key features:
 
 - **Multiple LLM providers** — choose between **OpenAI**, **Claude**, **Gemini**, **Ollama**, **Bedrock**,
-  **OpenRouter**, or **Azure OpenAI** and switch anytime.
+  **OpenRouter**, or **Azure OpenAI** and switch anytime. Plus a generic **OpenAI-compatible** provider and a
+  **9Router** preset, so any OpenAI-style gateway (LMRouter, vLLM, LocalAI, LiteLLM, ...) works by just setting a base URL.
+- **Project coding conventions** — feed your team's standards (Markdown) into every review from a **local folder**, a
+  **raw URL**, or a **git repo** (public or private). The AI reviews against *your* rules, not just generic defaults.
 - **VCS integration** — works out of the box with **GitLab**, **GitHub**, **Bitbucket Cloud**, **Bitbucket Server**,
   **Azure DevOps**, and **Gitea**.
 - **Customizable prompts** — adapt inline, context, and summary reviews to match your team's coding guidelines.
@@ -83,20 +88,25 @@ argus-review run-summary-reply
 Install via **pip**:
 
 ```bash
-pip install argus-review
+pip install argus-review-code
 ```
 
-📦 Available on [PyPI](https://pypi.org/project/argus-review/)
+📦 Package name on PyPI: **`argus-review-code`** (the CLI command is still `argus-review`)
 
----
-
-Or run directly via Docker:
+Or install from source:
 
 ```bash
-docker run --rm -v $(pwd):/app deha/argus-review:latest run-summary
+git clone https://github.com/sang-hv/ai-code-review.git
+cd ai-code-review
+pip install .
 ```
 
-🐳 Pull from [DockerHub](https://hub.docker.com/r/deha/argus-review)
+Or build the Docker image locally:
+
+```bash
+docker build -t ai-code-review:latest .
+docker run --rm -v $(pwd):/app ai-code-review:latest run-summary
+```
 
 👉 Before running, create a basic configuration file [.ai-review.yaml](./docs/configs/.ai-review.yaml) in the root of
 your project:
@@ -149,13 +159,94 @@ for complete, ready-to-use examples.
 
 Key things you can customize:
 
-- **LLM provider** — OpenAI, Gemini, Claude, Ollama, Bedrock, OpenRouter, or Azure OpenAI
+- **LLM provider** — OpenAI, Gemini, Claude, Ollama, Bedrock, OpenRouter, Azure OpenAI, any **OpenAI-compatible**
+  endpoint, or **9Router**
 - **Model settings** — model name, temperature, max tokens
 - **VCS integration** — works out of the box with **GitLab**, **GitHub**, **Bitbucket Cloud**, **Bitbucket Server**,
   **Azure DevOps**, and **Gitea**
 - **Agent mode** — enable iterative repository exploration before review
+- **Coding conventions** — load your team's `.md` standards from a local folder, a URL, or a git repo
+- **Review language** — have the AI write comments/summaries/replies in any language (English, Vietnamese, ...)
 - **Review policy** — which files to include/exclude, review modes
 - **Prompts** — inline/context/summary/agent prompt templates
+
+---
+
+### 🔌 OpenAI-compatible providers & 9Router
+
+Any gateway that speaks the OpenAI Chat Completions API works with the `OPENAI_COMPATIBLE` provider — you only set a
+base URL and a model:
+
+```yaml
+llm:
+  provider: OPENAI_COMPATIBLE
+  meta:
+    model: meta-llama/llama-3.1-70b-instruct
+  http_client:
+    api_url: https://my-router.example.com/v1
+    api_token: ${LLM_API_TOKEN}   # optional — omit for token-less local gateways
+```
+
+For the [9Router](https://9router.com) local proxy, use the `9ROUTER` preset. `api_url` defaults to
+`http://localhost:20128/v1`, so config stays minimal:
+
+```yaml
+llm:
+  provider: 9ROUTER
+  meta:
+    model: gpt-4o-mini
+```
+
+---
+
+### 📐 Project coding conventions
+
+Every team has its own standards. Point ArgusReview at your convention docs and they get injected into each review
+prompt automatically. Sources can be a local file/folder, a raw URL, or a git repo — private ones supported via token:
+
+```yaml
+conventions:
+  enabled: true
+  sources:
+    # Local file or folder of .md docs
+    - type: local
+      path: ./docs/conventions
+
+    # Raw Markdown from a URL (token optional, for private URLs)
+    - type: url
+      url: https://raw.githubusercontent.com/my-org/standards/main/PYTHON.md
+      token: ${CONVENTIONS_URL_TOKEN}
+
+    # .md docs pulled from a git repo (token optional, for private repos)
+    - type: git
+      repo: https://github.com/my-org/standards.git
+      ref: main
+      path: python
+      token: ${GIT_TOKEN}
+
+  # Optional: enable/disable per review mode (all on by default)
+  modes:
+    inline: true
+    context: true
+    summary: true
+    inline_reply: true
+    summary_reply: true
+```
+
+Convention loading is fail-soft: an unreachable source is logged and skipped, so a review is never blocked.
+
+---
+
+### 🌐 Review language
+
+Have the AI write its review (inline comments, summaries, and replies) in the language your team prefers. It's a
+single free-form field — use any language name the model understands. Code identifiers, file paths, and code snippets
+are always kept unchanged.
+
+```yaml
+review:
+  language: Vietnamese   # or English (default), Tiếng Việt, 日本語, Français, ...
+```
 
 👉 Minimal configuration is enough to get started. Use the full reference configs if you want fine-grained control (
 timeouts, artifacts, logging, etc.).
@@ -203,7 +294,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: deha-project/argus-review@v0.68.0
+      - uses: sang-hv/ai-code-review@main
         with:
           review-command: ${{ inputs.review-command }}
         env:
@@ -235,7 +326,7 @@ For GitLab users:
 argus-review:
   when: manual
   stage: review
-  image: deha/argus-review:latest
+  image: ai-code-review:latest   # build from this repo's Dockerfile and push to your own registry
   rules:
     - if: '$CI_MERGE_REQUEST_IID'
   script:
@@ -296,5 +387,6 @@ inside your infrastructure.
 
 🧠 **ArgusReview** — open-source AI-powered code reviewer
 
-- 📦 [PyPI](https://pypi.org/project/argus-review/)
-- 🐳 [DockerHub](https://hub.docker.com/r/deha/argus-review)
+- 📂 [Source (this fork)](https://github.com/sang-hv/ai-code-review)
+- 📦 [PyPI](https://pypi.org/project/argus-review-code/)
+- 📜 [NOTICE — attribution & fork history](./NOTICE)

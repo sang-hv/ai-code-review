@@ -9,7 +9,7 @@ def load_pyproject() -> dict:
 def test_distribution_identity_is_argusreview():
     pyproject = load_pyproject()
 
-    assert pyproject["project"]["name"] == "argus-review"
+    assert pyproject["project"]["name"] == "argus-review-code"
     assert pyproject["project"]["scripts"] == {
         "argus-review": "argus_review.cli.main:app",
     }

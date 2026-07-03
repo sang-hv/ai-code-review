@@ -24,6 +24,11 @@ prompt:
   inline_reply_prompt_files: [ ./docs/prompts/python/inline_reply/strict.md ]
   summary_reply_prompt_files: [ ./docs/prompts/python/summary_reply/strict.md ]
 
+review:
+  # Language the AI writes the review in (free-form). Default: English.
+  # e.g. Vietnamese, Tiếng Việt, 日本語, Français
+  language: English
+
 artifacts:
   llm_dir: ./artifacts/llm
   vcs_dir: ./artifacts/vcs

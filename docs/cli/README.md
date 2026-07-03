@@ -12,7 +12,7 @@ It is built with Typer and fully supports async execution of all review modes.
 After installing ArgusReview:
 
 ````bash
-pip install argus-review
+pip install argus-review-code
 ````
 
 Run any command from your terminal:

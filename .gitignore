@@ -11,6 +11,10 @@ __pycache__/
 /.ai-review.json
 /.ai-review.yaml
 
+# Local review output (LLM/VCS artifacts) and test cache
+/artifacts/
+.pytest_cache/
+
 # Distribution / packaging
 .Python
 build/

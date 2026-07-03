@@ -101,8 +101,28 @@
     "include_inline_reply_system_prompts": true,
     "include_summary_reply_system_prompts": true
   },
+  "conventions": {
+    "enabled": false,
+    "heading": "Project Coding Conventions",
+    "timeout": 30,
+    "sources": [
+      {
+        "type": "local",
+        "path": "./docs/conventions",
+        "glob": "**/*.md"
+      }
+    ],
+    "modes": {
+      "inline": true,
+      "context": true,
+      "summary": true,
+      "inline_reply": true,
+      "summary_reply": true
+    }
+  },
   "review": {
     "mode": "FULL_FILE_DIFF",
+    "language": "English",
     "dry_run": false,
     "inline_tag": "#ai-review-inline",
     "inline_reply_tag": "#ai-review-inline-reply",

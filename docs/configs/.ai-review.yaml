@@ -5,6 +5,14 @@
 llm:
   # Provider for the Large Language Model.
   # Options: OPENAI | GEMINI | CLAUDE | OLLAMA | BEDROCK | OPENROUTER | AZURE_OPENAI
+  #          | OPENAI_COMPATIBLE | 9ROUTER
+  #
+  # - OPENAI_COMPATIBLE: any OpenAI Chat Completions compatible endpoint
+  #   (LMRouter, vLLM, LocalAI, LiteLLM, self-hosted gateways, ...).
+  #   Just set http_client.api_url + meta.model. api_token is optional.
+  # - 9ROUTER: the 9Router local proxy (https://9router.com). Same as
+  #   OPENAI_COMPATIBLE but api_url defaults to http://localhost:20128/v1,
+  #   so it works with almost no config.
   provider: OPENAI
 
   # Path to the pricing file used for cost estimation.
@@ -55,6 +63,16 @@ llm:
     # max_tokens: 1200
     # temperature: 0.3
 
+    # --- OpenAI-compatible (LMRouter, vLLM, LocalAI, LiteLLM, ...) ---
+    # model: meta-llama/llama-3.1-70b-instruct   # whatever your gateway exposes
+    # max_tokens: 1200
+    # temperature: 0.3
+
+    # --- 9Router ---
+    # model: gpt-4o-mini   # a model string your 9Router combo routes to
+    # max_tokens: 1200
+    # temperature: 0.3
+
   # HTTP client configuration for LLM.
   http_client:
     # SSL verification:
@@ -102,6 +120,15 @@ llm:
     # api_url: https://<your-resource>.openai.azure.com
     # api_token: ${AZURE_OPENAI_API_KEY}
     # api_version: 2024-06-01
+
+    # --- OpenAI-compatible ---
+    # api_url: https://my-router.example.com/v1  # base URL of your gateway (required)
+    # api_token: ${LLM_API_TOKEN}                # optional (omit for token-less local gateways)
+
+    # --- 9Router ---
+    # (api_url defaults to http://localhost:20128/v1 — usually nothing to set here)
+    # api_url: http://localhost:20128/v1
+    # api_token: ${NINE_ROUTER_TOKEN}            # optional
 
 vcs:
   # Version control system provider.
@@ -491,6 +518,56 @@ prompt:
   # false → only user-provided system_summary_reply_prompt_files are used
   include_summary_reply_system_prompts: true
 
+conventions:
+  # ==============================
+  # Project coding conventions
+  # ==============================
+  # Inject your team's coding standards (plain Markdown) into every review
+  # prompt, so the AI reviews against YOUR rules — not just generic defaults.
+  #
+  # The docs from all `sources` are combined into a single
+  # "## <heading>" section and appended to the review prompt.
+  #
+  # Resolution is fail-soft: an unreachable source is logged and skipped,
+  # a review is never blocked by missing conventions.
+
+  # Master switch. Default: false (feature off).
+  enabled: false
+
+  # Heading shown to the model above the combined conventions.
+  heading: "Project Coding Conventions"
+
+  # Timeout (seconds) applied per remote (url/git) source.
+  timeout: 30
+
+  # Where to load conventions from. Mix and match as many as you like.
+  sources:
+    # --- Local file or directory (relative to repo root, or absolute) ---
+    - type: local
+      path: ./docs/conventions   # a single .md file, or a folder of them
+      glob: "**/*.md"            # only used when `path` is a directory
+
+    # --- Remote URL (raw Markdown) ---
+    # - type: url
+    #   url: https://raw.githubusercontent.com/my-org/standards/main/PYTHON.md
+    #   token: ${CONVENTIONS_URL_TOKEN}   # optional, sent as "Authorization: Bearer ..." for private URLs
+
+    # --- Git repository (shallow-cloned, .md files read from a subpath) ---
+    # - type: git
+    #   repo: https://github.com/my-org/standards.git
+    #   ref: main               # branch or tag
+    #   path: python            # file or subdirectory inside the repo
+    #   glob: "**/*.md"
+    #   token: ${GIT_TOKEN}     # optional, for private repos (HTTPS)
+
+  # Per-mode toggles. All modes are ON by default when `enabled: true`.
+  modes:
+    inline: true
+    context: true
+    summary: true
+    inline_reply: true
+    summary_reply: true
+
 review:
   # Review mode determines which parts of files are reviewed.
   # Options:
@@ -506,6 +583,14 @@ review:
   #   ONLY_REMOVED_WITH_CONTEXT   - Removed lines + N lines of context
   #   ADDED_AND_REMOVED_WITH_CONTEXT - Both added/removed lines + N lines of context
   mode: FULL_FILE_DIFF
+
+  # --- Review language ---
+  # Natural language the AI writes its review in (inline comments, summaries, replies).
+  # Free-form — use any language name the model understands.
+  # Examples: "English", "Vietnamese", "Tiếng Việt", "日本語", "Français"
+  # Code identifiers, file paths and code snippets are always kept as-is.
+  # Default: English
+  language: English
 
   # --- Dry-run mode ---
   # When enabled, the review process runs fully but does not create

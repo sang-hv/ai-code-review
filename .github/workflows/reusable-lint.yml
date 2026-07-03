@@ -16,5 +16,5 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
       - run: pip install ruff
-      - run: ruff check ai_review
+      - run: ruff check argus_review
     runs-on: ubuntu-latest

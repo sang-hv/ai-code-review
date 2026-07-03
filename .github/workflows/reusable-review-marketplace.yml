@@ -1,4 +1,4 @@
-name: Review Marketplace
+name: Review Composite Action (local)
 
 on:
   workflow_call:
@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run ArgusReview
-        uses: deha-project/argus-review@v0.68.0
+        uses: ./
         env:
           AI_REVIEW_CONFIG_FILE_YAML: ./ci/review/config.yaml
 

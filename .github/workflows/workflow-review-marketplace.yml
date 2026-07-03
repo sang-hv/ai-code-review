@@ -1,4 +1,4 @@
-name: 🤖 Review Marketplace
+name: 🤖 Review Composite Action (local)
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   review:
-    name: 🤖 review marketplace
+    name: 🤖 review composite action (local)
     uses: ./.github/workflows/reusable-review-marketplace.yml
     with:
       review-command: ${{ inputs.review-command }}
