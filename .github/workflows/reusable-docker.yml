@@ -27,4 +27,4 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/argus-review:latest
             ${{ secrets.DOCKER_USERNAME }}/argus-review:${{ github.ref_name }}
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted

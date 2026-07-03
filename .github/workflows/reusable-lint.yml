@@ -17,4 +17,4 @@ jobs:
           python-version: ${{ inputs.python-version }}
       - run: pip install ruff
       - run: ruff check argus_review
-    runs-on: ubuntu-latest
+    runs-on: self-hosted

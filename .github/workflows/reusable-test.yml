@@ -36,4 +36,4 @@ jobs:
           verbose: true
           fail_ci_if_error: true
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
