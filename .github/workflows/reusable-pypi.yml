@@ -10,13 +10,14 @@ on:
 
 jobs:
   action:
+    runs-on: self-hosted
+    container:
+      image: python:${{ inputs.python-version }}-slim
     steps:
-      - uses: actions/checkout@v6
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ inputs.python-version }}
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -31,4 +32,3 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-    runs-on: self-hosted

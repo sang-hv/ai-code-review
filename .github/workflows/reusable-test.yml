@@ -14,13 +14,16 @@ on:
 
 jobs:
   action:
+    runs-on: self-hosted
+    container:
+      image: python:${{ inputs.python-version }}-slim
     env:
       AI_REVIEW_CONFIG_FILE_YAML: ${{ inputs.config-file }}
     steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ inputs.python-version }}
 
       - name: Install dependencies
         run: pip install .[test] pytest pytest-cov
@@ -35,5 +38,3 @@ jobs:
           files: ./coverage.xml
           verbose: true
           fail_ci_if_error: true
-
-    runs-on: self-hosted
