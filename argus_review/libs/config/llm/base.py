@@ -8,8 +8,13 @@ from argus_review.libs.config.llm.azure_openai import AzureOpenAIHTTPClientConfi
 from argus_review.libs.config.llm.bedrock import BedrockHTTPClientConfig, BedrockMetaConfig
 from argus_review.libs.config.llm.claude import ClaudeHTTPClientConfig, ClaudeMetaConfig
 from argus_review.libs.config.llm.gemini import GeminiHTTPClientConfig, GeminiMetaConfig
+from argus_review.libs.config.llm.nine_router import NineRouterHTTPClientConfig, NineRouterMetaConfig
 from argus_review.libs.config.llm.ollama import OllamaHTTPClientConfig, OllamaMetaConfig
 from argus_review.libs.config.llm.openai import OpenAIHTTPClientConfig, OpenAIMetaConfig
+from argus_review.libs.config.llm.openai_compatible import (
+    OpenAICompatibleHTTPClientConfig,
+    OpenAICompatibleMetaConfig,
+)
 from argus_review.libs.config.llm.openrouter import OpenRouterHTTPClientConfig, OpenRouterMetaConfig
 from argus_review.libs.constants.llm_provider import LLMProvider
 from argus_review.libs.resources import load_resource
@@ -83,6 +88,18 @@ class AzureOpenAILLMConfig(LLMConfigBase):
     http_client: AzureOpenAIHTTPClientConfig
 
 
+class OpenAICompatibleLLMConfig(LLMConfigBase):
+    meta: OpenAICompatibleMetaConfig
+    provider: Literal[LLMProvider.OPENAI_COMPATIBLE]
+    http_client: OpenAICompatibleHTTPClientConfig
+
+
+class NineRouterLLMConfig(LLMConfigBase):
+    meta: NineRouterMetaConfig = NineRouterMetaConfig()
+    provider: Literal[LLMProvider.NINE_ROUTER]
+    http_client: NineRouterHTTPClientConfig = NineRouterHTTPClientConfig()
+
+
 LLMConfig = Annotated[
     OpenAILLMConfig
     | GeminiLLMConfig
@@ -90,6 +107,8 @@ LLMConfig = Annotated[
     | OllamaLLMConfig
     | BedrockLLMConfig
     | OpenRouterLLMConfig
-    | AzureOpenAILLMConfig,
+    | AzureOpenAILLMConfig
+    | OpenAICompatibleLLMConfig
+    | NineRouterLLMConfig,
     Field(discriminator="provider")
 ]

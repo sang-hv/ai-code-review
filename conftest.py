@@ -34,6 +34,7 @@ pytest_plugins = (
     "argus_review.tests.fixtures.clients.ollama",
     "argus_review.tests.fixtures.clients.bedrock",
     "argus_review.tests.fixtures.clients.openrouter",
+    "argus_review.tests.fixtures.clients.openai_compatible",
     "argus_review.tests.fixtures.clients.azure_openai",
     "argus_review.tests.fixtures.clients.azure_devops",
     "argus_review.tests.fixtures.clients.bitbucket_cloud",

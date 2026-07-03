@@ -6,6 +6,7 @@ from argus_review.services.llm.claude.client import ClaudeLLMClient
 from argus_review.services.llm.gemini.client import GeminiLLMClient
 from argus_review.services.llm.ollama.client import OllamaLLMClient
 from argus_review.services.llm.openai.client import OpenAILLMClient
+from argus_review.services.llm.openai_compatible.client import OpenAICompatibleLLMClient
 from argus_review.services.llm.openrouter.client import OpenRouterLLMClient
 from argus_review.services.llm.types import LLMClientProtocol
 
@@ -26,5 +27,7 @@ def get_llm_client() -> LLMClientProtocol:
             return OpenRouterLLMClient()
         case LLMProvider.AZURE_OPENAI:
             return AzureOpenAILLMClient()
+        case LLMProvider.OPENAI_COMPATIBLE | LLMProvider.NINE_ROUTER:
+            return OpenAICompatibleLLMClient()
         case _:
             raise ValueError(f"Unsupported LLM provider: {settings.llm.provider}")

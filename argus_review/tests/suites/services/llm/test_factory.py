@@ -7,6 +7,7 @@ from argus_review.services.llm.factory import get_llm_client
 from argus_review.services.llm.gemini.client import GeminiLLMClient
 from argus_review.services.llm.ollama.client import OllamaLLMClient
 from argus_review.services.llm.openai.client import OpenAILLMClient
+from argus_review.services.llm.openai_compatible.client import OpenAICompatibleLLMClient
 from argus_review.services.llm.openrouter.client import OpenRouterLLMClient
 
 
@@ -50,6 +51,18 @@ def test_get_llm_client_returns_openrouter(monkeypatch: pytest.MonkeyPatch):
 def test_get_llm_client_returns_azure_openai(monkeypatch: pytest.MonkeyPatch):
     client = get_llm_client()
     assert isinstance(client, AzureOpenAILLMClient)
+
+
+@pytest.mark.usefixtures("openai_compatible_http_client_config")
+def test_get_llm_client_returns_openai_compatible(monkeypatch: pytest.MonkeyPatch):
+    client = get_llm_client()
+    assert isinstance(client, OpenAICompatibleLLMClient)
+
+
+@pytest.mark.usefixtures("nine_router_http_client_config")
+def test_get_llm_client_returns_nine_router(monkeypatch: pytest.MonkeyPatch):
+    client = get_llm_client()
+    assert isinstance(client, OpenAICompatibleLLMClient)
 
 
 def test_get_llm_client_unsupported_provider(monkeypatch: pytest.MonkeyPatch):
