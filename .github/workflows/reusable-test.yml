@@ -19,15 +19,15 @@ jobs:
       AI_REVIEW_CONFIG_FILE_YAML: ${{ inputs.config-file }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ inputs.python-version }}
+
+      - name: Set up virtualenv
+        run: python3.12 -m venv .venv
 
       - name: Install dependencies
-        run: pip install .[test] pytest pytest-cov
+        run: .venv/bin/pip install .[test] pytest pytest-cov
 
       - name: Run tests
-        run: pytest --cov=argus_review --cov-report=xml --cov-report=term-missing
+        run: .venv/bin/pytest --cov=argus_review --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage
         uses: codecov/codecov-action@v6

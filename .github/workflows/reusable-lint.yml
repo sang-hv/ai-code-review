@@ -13,8 +13,9 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ inputs.python-version }}
-      - run: pip install ruff
-      - run: ruff check argus_review
+
+      - name: Set up virtualenv
+        run: python3.12 -m venv .venv
+
+      - run: .venv/bin/pip install ruff
+      - run: .venv/bin/ruff check argus_review

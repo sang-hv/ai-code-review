@@ -14,23 +14,28 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+    # NOTE: actions/setup-python is intentionally not used here. On this
+    # fork's self-hosted macOS runner it fails trying to write its tool
+    # cache to /Users/runner (permission denied) regardless of
+    # AGENT_TOOLSDIRECTORY. Python 3.12 is expected to already be
+    # available on the runner (e.g. `brew install python@3.12`).
+    - name: Set up virtualenv
+      run: python3.12 -m venv "${{ github.action_path }}/.venv"
+      shell: bash
 
     - name: Install ArgusReview
-      run: python -m pip install --no-cache-dir "${{ github.action_path }}"
+      run: "${{ github.action_path }}/.venv/bin/pip install --no-cache-dir \"${{ github.action_path }}\""
       shell: bash
 
     - name: Run ArgusReview
       env:
         REVIEW_COMMAND: ${{ inputs.review-command }}
       run: |
-        argus-review show-config
+        ARGUS_REVIEW="${{ github.action_path }}/.venv/bin/argus-review"
+        "$ARGUS_REVIEW" show-config
         case "$REVIEW_COMMAND" in
           run|run-inline|run-context|run-summary|run-inline-reply|run-summary-reply|clear-inline|clear-summary)
-            argus-review "$REVIEW_COMMAND"
+            "$ARGUS_REVIEW" "$REVIEW_COMMAND"
             ;;
           *)
             echo "Unsupported review-command: $REVIEW_COMMAND" >&2
