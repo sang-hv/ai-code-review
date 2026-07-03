@@ -14,12 +14,7 @@ on:
 jobs:
   action:
     runs-on: self-hosted
-    container:
-      image: python:3.12-slim
     steps:
-      - name: Install git
-        run: apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
-
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
