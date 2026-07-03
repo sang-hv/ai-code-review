@@ -8,6 +8,7 @@ from pydantic_settings import (
 
 from argus_review.libs.config.agent import AgentConfig
 from argus_review.libs.config.artifacts import ArtifactsConfig
+from argus_review.libs.config.conventions import ConventionsConfig
 from argus_review.libs.config.base import (
     get_env_config_file_or_default,
     get_yaml_config_file_or_default,
@@ -42,6 +43,7 @@ class Settings(BaseSettings):
     agent: AgentConfig = AgentConfig()
     prompt: PromptConfig = PromptConfig()
     review: ReviewConfig = ReviewConfig()
+    conventions: ConventionsConfig = ConventionsConfig()
     logger: LoggerConfig = LoggerConfig()
     artifacts: ArtifactsConfig = ArtifactsConfig()
 

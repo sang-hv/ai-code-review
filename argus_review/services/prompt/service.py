@@ -10,6 +10,7 @@ from argus_review.services.prompt.tools import (
     normalize_prompt,
 )
 from argus_review.services.prompt.types import PromptServiceProtocol
+from argus_review.services.conventions.service import get_conventions_service
 from argus_review.services.vcs.types import ReviewThreadSchema
 
 
@@ -23,6 +24,29 @@ class PromptService(PromptServiceProtocol):
             prompt = normalize_prompt(prompt)
 
         return prompt
+
+    @classmethod
+    def with_conventions(cls, prompt: str, mode: str) -> str:
+        """Append the project coding-conventions block for `mode`, if enabled."""
+        conventions = get_conventions_service().render(mode)
+        if not conventions:
+            return prompt
+
+        return f"{prompt}\n\n{conventions}"
+
+    @classmethod
+    def with_language(cls, prompt: str) -> str:
+        """Instruct the model to write the review in the configured language."""
+        language = settings.review.language.strip()
+        if not language:
+            return prompt
+
+        directive = (
+            f"## Response Language\n\n"
+            f"Write the entire review — all comments, summaries and replies — in {language}. "
+            f"Keep code identifiers, file paths, and code snippets unchanged."
+        )
+        return f"{prompt}\n\n{directive}"
 
     @classmethod
     def build_agent_request(
@@ -47,6 +71,8 @@ class PromptService(PromptServiceProtocol):
     @classmethod
     def build_inline_request(cls, diff: DiffFileSchema, context: PromptContextSchema) -> str:
         prompt = cls.prepare_prompt(settings.prompt.load_inline(), context)
+        prompt = cls.with_conventions(prompt, "inline")
+        prompt = cls.with_language(prompt)
         return (
             f"{prompt}\n\n"
             f"## Diff\n\n"
@@ -56,6 +82,8 @@ class PromptService(PromptServiceProtocol):
     @classmethod
     def build_summary_request(cls, diffs: list[DiffFileSchema], context: PromptContextSchema) -> str:
         prompt = cls.prepare_prompt(settings.prompt.load_summary(), context)
+        prompt = cls.with_conventions(prompt, "summary")
+        prompt = cls.with_language(prompt)
         changes = format_files(diffs)
         return (
             f"{prompt}\n\n"
@@ -66,6 +94,8 @@ class PromptService(PromptServiceProtocol):
     @classmethod
     def build_context_request(cls, diffs: list[DiffFileSchema], context: PromptContextSchema) -> str:
         prompt = cls.prepare_prompt(settings.prompt.load_context(), context)
+        prompt = cls.with_conventions(prompt, "context")
+        prompt = cls.with_language(prompt)
         changes = format_files(diffs)
         return (
             f"{prompt}\n\n"
@@ -81,6 +111,8 @@ class PromptService(PromptServiceProtocol):
             context: PromptContextSchema
     ) -> str:
         prompt = cls.prepare_prompt(settings.prompt.load_inline_reply(), context)
+        prompt = cls.with_conventions(prompt, "inline_reply")
+        prompt = cls.with_language(prompt)
         conversation = format_thread(thread)
 
         return (
@@ -99,6 +131,8 @@ class PromptService(PromptServiceProtocol):
             context: PromptContextSchema
     ) -> str:
         prompt = cls.prepare_prompt(settings.prompt.load_summary_reply(), context)
+        prompt = cls.with_conventions(prompt, "summary_reply")
+        prompt = cls.with_language(prompt)
         changes = format_files(diffs)
         conversation = format_thread(thread)
 

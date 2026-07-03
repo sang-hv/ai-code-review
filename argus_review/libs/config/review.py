@@ -20,6 +20,9 @@ class ReviewMode(StrEnum):
 class ReviewConfig(BaseModel):
     mode: ReviewMode = ReviewMode.FULL_FILE_DIFF
     dry_run: bool = False
+    # Natural language the AI writes its review in (comments, summaries, replies).
+    # Free-form so any language works, e.g. "English", "Vietnamese", "Tiếng Việt", "日本語".
+    language: str = "English"
     inline_tag: str = Field(default="#ai-review-inline")
     inline_reply_tag: str = Field(default="#ai-review-inline-reply")
     inline_fallback_tag: str = Field(default="#ai-review-inline-fallback")
