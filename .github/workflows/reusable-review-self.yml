@@ -31,18 +31,21 @@ jobs:
         continue-on-error: true
         with:
           review-command: ${{ inputs.review-command }}
-          # Optional: set these repo secrets to switch LLM provider/model
-          # without editing the committed YAML. Left empty by default,
-          # which falls back to the ci/review/config.yaml baseline.
+          # Optional: set these repo secrets to switch LLM provider/model/
+          # endpoint/token without editing the committed YAML. Left empty
+          # by default, which falls back to the ci/review/config.yaml
+          # baseline (OpenAI). Set all four to point at a different
+          # provider — e.g. a self-hosted 9Router proxy:
+          #   LLM_PROVIDER = 9ROUTER
+          #   LLM_MODEL    = <model your 9Router combo routes to>
+          #   LLM_API_URL  = http://localhost:20128/v1
+          #   LLM_API_TOKEN = (leave unset if no auth required)
           llm-provider: ${{ secrets.LLM_PROVIDER }}
           llm-model: ${{ secrets.LLM_MODEL }}
+          llm-api-url: ${{ secrets.LLM_API_URL }}
+          llm-api-token: ${{ secrets.LLM_API_TOKEN }}
         env:
           AI_REVIEW_CONFIG_FILE_YAML: ./ci/review/config.yaml
-
-          # action.yml has no dedicated input for the API token or VCS
-          # context, so these are passed as plain env vars instead — same
-          # as any other project consuming this action would do.
-          LLM__HTTP_CLIENT__API_TOKEN: ${{ secrets.LLM_API_TOKEN }}
 
           VCS__HTTP_CLIENT__API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VCS__PIPELINE__OWNER: ${{ github.repository_owner }}

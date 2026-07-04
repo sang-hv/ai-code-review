@@ -12,10 +12,16 @@ inputs:
     description: 'Which review mode to run (run, run-inline, run-summary, run-context)'
   llm-provider:
     required: false
-    description: 'Override LLM provider (OPENAI, CLAUDE, GEMINI, ...). Leave empty to use the committed config.'
+    description: 'Override LLM provider (OPENAI, CLAUDE, GEMINI, 9ROUTER, ...). Leave empty to use the committed config.'
   llm-model:
     required: false
     description: 'Override LLM model name. Leave empty to use the committed config.'
+  llm-api-url:
+    required: false
+    description: 'Override LLM API base URL (e.g. http://localhost:20128/v1 for 9Router). Leave empty to use the committed config.'
+  llm-api-token:
+    required: false
+    description: 'LLM API token/key. Leave empty for token-less local gateways (e.g. 9Router with no auth).'
 
 runs:
   using: 'composite'
@@ -38,6 +44,8 @@ runs:
         REVIEW_COMMAND: ${{ inputs.review-command }}
         LLM__PROVIDER: ${{ inputs.llm-provider }}
         LLM__META__MODEL: ${{ inputs.llm-model }}
+        LLM__HTTP_CLIENT__API_URL: ${{ inputs.llm-api-url }}
+        LLM__HTTP_CLIENT__API_TOKEN: ${{ inputs.llm-api-token }}
       run: |
         ARGUS_REVIEW="${{ github.action_path }}/.venv/bin/argus-review"
         "$ARGUS_REVIEW" show-config
