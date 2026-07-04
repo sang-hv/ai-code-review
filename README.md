@@ -104,9 +104,10 @@ pip install .
 Or build the Docker image locally:
 
 ```bash
-docker build -t ai-code-review:latest .
-docker run --rm -v $(pwd):/app ai-code-review:latest run-summary
+docker run --rm -v $(pwd):/app supersentaj/argus-review:latest run-summary
 ```
+
+🐳 Pull from [Docker Hub](https://hub.docker.com/r/supersentaj/argus-review)
 
 👉 Before running, create a basic configuration file [.ai-review.yaml](./docs/configs/.ai-review.yaml) in the root of
 your project:
@@ -326,7 +327,7 @@ For GitLab users:
 argus-review:
   when: manual
   stage: review
-  image: ai-code-review:latest   # build from this repo's Dockerfile and push to your own registry
+  image: supersentaj/argus-review:latest
   rules:
     - if: '$CI_MERGE_REQUEST_IID'
   script:

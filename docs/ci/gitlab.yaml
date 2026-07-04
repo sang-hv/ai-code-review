@@ -2,7 +2,7 @@
   tags: [ build ]
   when: manual
   stage: review
-  image: ai-code-review:latest   # build from this repo's Dockerfile and push to your own registry
+  image: supersentaj/argus-review:latest
   rules:
     - if: '$CI_MERGE_REQUEST_IID'
   script:

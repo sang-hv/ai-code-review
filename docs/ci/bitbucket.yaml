@@ -2,7 +2,7 @@
 # Bitbucket Pipelines configuration for ArgusReview
 # ============================================
 
-image: ai-code-review:latest   # build from this repo's Dockerfile and push to your own registry
+image: supersentaj/argus-review:latest
 
 options:
   size: 2x

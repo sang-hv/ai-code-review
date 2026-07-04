@@ -48,7 +48,7 @@ pipeline {
                       -e VCS__HTTP_CLIENT__API_TOKEN \
                       -e CORE__CONCURRENCY \
                       -v $(pwd):/app \
-                      ai-code-review:latest run-inline
+                      supersentaj/argus-review:latest run-inline
                 '''
             }
         }
@@ -58,7 +58,7 @@ pipeline {
                 sh '''
                     docker run --rm \
                       -v $(pwd):/app \
-                      ai-code-review:latest run-context
+                      supersentaj/argus-review:latest run-context
                 '''
             }
         }
@@ -68,7 +68,7 @@ pipeline {
                 sh '''
                     docker run --rm \
                       -v $(pwd):/app \
-                      ai-code-review:latest run-summary
+                      supersentaj/argus-review:latest run-summary
                 '''
             }
         }
