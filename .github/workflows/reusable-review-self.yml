@@ -52,10 +52,6 @@ jobs:
           VCS__PIPELINE__REPO: ${{ github.event.repository.name }}
           VCS__PIPELINE__PULL_NUMBER: ${{ inputs.pull-request-number }}
 
-      - name: Upload ArgusReview artifacts
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: argus-review-artifacts
-          path: ./artifacts
-          retention-days: 7
+      # Artifacts are disabled in ci/review/config.yaml (llm_enabled/
+      # vcs_enabled: false) to avoid hitting GitHub's Actions storage
+      # quota, so there is nothing to upload here anymore.
