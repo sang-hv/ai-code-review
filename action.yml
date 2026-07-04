@@ -10,6 +10,12 @@ inputs:
     default: 'run'
     required: false
     description: 'Which review mode to run (run, run-inline, run-summary, run-context)'
+  llm-provider:
+    required: false
+    description: 'Override LLM provider (OPENAI, CLAUDE, GEMINI, ...). Leave empty to use the committed config.'
+  llm-model:
+    required: false
+    description: 'Override LLM model name. Leave empty to use the committed config.'
 
 runs:
   using: 'composite'
@@ -30,6 +36,8 @@ runs:
     - name: Run ArgusReview
       env:
         REVIEW_COMMAND: ${{ inputs.review-command }}
+        LLM__PROVIDER: ${{ inputs.llm-provider }}
+        LLM__META__MODEL: ${{ inputs.llm-model }}
       run: |
         ARGUS_REVIEW="${{ github.action_path }}/.venv/bin/argus-review"
         "$ARGUS_REVIEW" show-config

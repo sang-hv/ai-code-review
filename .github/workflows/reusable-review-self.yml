@@ -3,10 +3,6 @@ name: Review
 on:
   workflow_call:
     inputs:
-      python-version:
-        type: string
-        default: "3.12"
-        required: false
       review-command:
         type: string
         default: "run"
@@ -23,40 +19,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up virtualenv
-        run: python3.12 -m venv .venv
-
-      - name: Install ArgusReview
-        run: .venv/bin/pip install .
-
+      # Dogfooding: this uses the same composite action.yml that any other
+      # project would consume via `uses: sang-hv/ai-code-review@main`. Only
+      # the LLM/VCS env vars below are specific to this repo's CI — nothing
+      # is hardcoded inside the action itself.
       - name: Run ArgusReview
+        uses: ./
+        # This is an AI review, not a required check — a transient LLM/API
+        # failure shouldn't fail the whole job/pipeline. Errors are still
+        # visible in the step's own status and logs.
+        continue-on-error: true
+        with:
+          review-command: ${{ inputs.review-command }}
+          # Optional: set these repo secrets to switch LLM provider/model
+          # without editing the committed YAML. Left empty by default,
+          # which falls back to the ci/review/config.yaml baseline.
+          llm-provider: ${{ secrets.LLM_PROVIDER }}
+          llm-model: ${{ secrets.LLM_MODEL }}
         env:
           AI_REVIEW_CONFIG_FILE_YAML: ./ci/review/config.yaml
-          REVIEW_COMMAND: ${{ inputs.review-command }}
 
-          # Optional overrides for ci/review/config.yaml — only take effect
-          # if the corresponding secret is set. Set these repo secrets to
-          # switch provider/model without editing the committed YAML.
-          LLM__PROVIDER: ${{ secrets.LLM_PROVIDER }}
-          LLM__META__MODEL: ${{ secrets.LLM_MODEL }}
+          # action.yml has no dedicated input for the API token or VCS
+          # context, so these are passed as plain env vars instead — same
+          # as any other project consuming this action would do.
+          LLM__HTTP_CLIENT__API_TOKEN: ${{ secrets.LLM_API_TOKEN }}
 
-          LLM__HTTP_CLIENT__API_TOKEN: ${{ secrets.OPENAI_API_KEY }}
           VCS__HTTP_CLIENT__API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
           VCS__PIPELINE__OWNER: ${{ github.repository_owner }}
           VCS__PIPELINE__REPO: ${{ github.event.repository.name }}
           VCS__PIPELINE__PULL_NUMBER: ${{ inputs.pull-request-number }}
-        run: |
-          .venv/bin/argus-review show-config
-          case "$REVIEW_COMMAND" in
-            run|run-inline|run-context|run-summary|run-inline-reply|run-summary-reply|clear-inline|clear-summary)
-              .venv/bin/argus-review "$REVIEW_COMMAND"
-              ;;
-            *)
-              echo "Unsupported review-command: $REVIEW_COMMAND" >&2
-              exit 2
-              ;;
-          esac
 
       - name: Upload ArgusReview artifacts
         if: always()
