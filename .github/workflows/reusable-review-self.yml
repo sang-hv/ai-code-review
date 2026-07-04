@@ -34,6 +34,12 @@ jobs:
           AI_REVIEW_CONFIG_FILE_YAML: ./ci/review/config.yaml
           REVIEW_COMMAND: ${{ inputs.review-command }}
 
+          # Optional overrides for ci/review/config.yaml — only take effect
+          # if the corresponding secret is set. Set these repo secrets to
+          # switch provider/model without editing the committed YAML.
+          LLM__PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          LLM__META__MODEL: ${{ secrets.LLM_MODEL }}
+
           LLM__HTTP_CLIENT__API_TOKEN: ${{ secrets.OPENAI_API_KEY }}
           VCS__HTTP_CLIENT__API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

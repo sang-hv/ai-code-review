@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         extra='allow',
 
+        # GitHub Actions sets an env var to an empty string when the
+        # corresponding secret/input is unset, rather than leaving it
+        # undefined. Without this, an unset optional override (e.g.
+        # LLM__PROVIDER left empty on purpose) would be treated as an
+        # explicit empty value and fail validation instead of falling
+        # back to the YAML/JSON config.
+        env_ignore_empty=True,
+
         env_file=get_env_config_file_or_default(),
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
@@ -56,12 +64,25 @@ class Settings(BaseSettings):
             dotenv_settings: PydanticBaseSettingsSource,
             file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
+        # pydantic-settings uses "first source wins" for any given field, so
+        # sources listed first here have the *highest* priority.
+        #
+        # Order (highest -> lowest priority):
+        #   1. init args        - explicit constructor kwargs (mainly for tests)
+        #   2. environment vars - e.g. LLM__PROVIDER, LLM__META__MODEL, secrets in CI
+        #   3. .env file
+        #   4. YAML file        - project defaults / baseline config
+        #   5. JSON file
+        #
+        # This lets CI/CD override provider/model/tokens via env vars or repo
+        # secrets (e.g. LLM__PROVIDER=CLAUDE, LLM__META__MODEL=gpt-4o) without
+        # having to edit the committed YAML config.
         return (
-            YamlConfigSettingsSource(cls),
-            JsonConfigSettingsSource(cls),
+            init_settings,
             env_settings,
             dotenv_settings,
-            init_settings,
+            YamlConfigSettingsSource(cls),
+            JsonConfigSettingsSource(cls),
         )
 
 
