@@ -32,5 +32,5 @@ review:
 artifacts:
   llm_dir: ./artifacts/llm
   vcs_dir: ./artifacts/vcs
-  llm_enabled: true
-  vcs_enabled: true
+  llm_enabled: false
+  vcs_enabled: false
