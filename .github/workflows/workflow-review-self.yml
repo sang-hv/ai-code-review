@@ -1,6 +1,11 @@
 name: 🤖 Review Self
 
 on:
+  # Auto-run on every PR open/update against this repo.
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+  # Manual run from the Actions tab (any command, any PR number).
   workflow_dispatch:
     inputs:
       review-command:
@@ -31,6 +36,6 @@ jobs:
     name: 🤖 review self
     uses: ./.github/workflows/reusable-review-self.yml
     with:
-      review-command: ${{ inputs.review-command }}
-      pull-request-number: ${{ inputs.pull-request-number }}
+      review-command: ${{ inputs.review-command || 'run' }}
+      pull-request-number: ${{ inputs.pull-request-number || github.event.pull_request.number }}
     secrets: inherit

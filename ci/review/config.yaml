@@ -19,7 +19,7 @@ vcs:
 
 prompt:
   inline_prompt_files: [ ./docs/prompts/python/inline/strict.md ]
-  context_prompt_files: [ ./docs/prompts/python/inline/strict.md ]
+  context_prompt_files: [ ./docs/prompts/python/context/strict.md ]
   summary_prompt_files: [ ./docs/prompts/python/summary/strict.md ]
   inline_reply_prompt_files: [ ./docs/prompts/python/inline_reply/strict.md ]
   summary_reply_prompt_files: [ ./docs/prompts/python/summary_reply/strict.md ]
