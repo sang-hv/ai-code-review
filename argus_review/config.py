@@ -86,4 +86,18 @@ class Settings(BaseSettings):
         )
 
 
-settings = Settings()
+_settings: Settings | None = None
+
+
+def __getattr__(name: str) -> Settings:
+    # Lazily instantiate the settings singleton on first access (PEP 562).
+    # This keeps `from argus_review.config import settings` working exactly as
+    # before at runtime, while letting tools that only need the schema/class
+    # (e.g. `argus-review dump-schema`) import this module without a valid
+    # runtime config being present.
+    if name == "settings":
+        global _settings
+        if _settings is None:
+            _settings = Settings()
+        return _settings
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

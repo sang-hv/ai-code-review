@@ -93,5 +93,35 @@ def show_config():
     typer.echo(settings.model_dump_json(indent=2, exclude_none=True))
 
 
+@app.command("dump-schema")
+def dump_schema(
+        output: str = typer.Option(
+            None, "--output", "-o",
+            help="Write the schema to this file instead of stdout.",
+        ),
+):
+    """
+    Dump the configuration JSON Schema.
+
+    This is the single source of truth for every config option (providers,
+    fields, defaults). It does not require a valid config to run, so it can be
+    used to drive docs or a config generator UI.
+    """
+    import json
+    from pathlib import Path
+
+    from argus_review.config import Settings
+
+    schema = Settings.model_json_schema()
+    text = json.dumps(schema, indent=2, ensure_ascii=False)
+
+    if output:
+        Path(output).write_text(text, encoding="utf-8")
+        typer.secho(f"Schema written to {output}", fg=typer.colors.GREEN, bold=True)
+        return
+
+    typer.echo(text)
+
+
 if __name__ == "__main__":
     app()
