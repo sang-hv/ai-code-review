@@ -1,0 +1,17 @@
+{
+  "name": "argus-review-web",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Landing page + config generator for ArgusReview (sang-hv fork)",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "sync-schema": "argus-review dump-schema -o public/schema.json"
+  },
+  "dependencies": {
+    "astro": "^4.16.0",
+    "js-yaml": "^4.1.0"
+  }
+}

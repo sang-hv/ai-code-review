@@ -1,0 +1,85 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const base = import.meta.env.BASE_URL;
+
+const features = [
+  { ico: '🧩', title: 'Inline & summary review', text: 'Line-by-line comments plus a high-level summary posted right into your PR/MR.' },
+  { ico: '🧠', title: 'Agent mode', text: 'Optional ReAct loop that explores the repo (ls, cat, rg, git) before reviewing.' },
+  { ico: '📐', title: 'Your coding conventions', text: 'Feed your own .md standards from a local folder, a URL, or a git repo.' },
+  { ico: '🌐', title: 'Any language', text: 'Have the review written in Vietnamese, English, 日本語 — your choice.' },
+  { ico: '🔌', title: 'Bring your own LLM', text: 'OpenAI, Claude, Gemini, Bedrock, OpenRouter, Azure, any OpenAI-compatible gateway, or 9Router.' },
+  { ico: '⚙️', title: 'Config over env or YAML', text: 'Commit a YAML baseline, override provider/model/token via CI secrets. No lock-in.' },
+];
+
+const llmProviders = ['OpenAI', 'Claude', 'Gemini', 'Ollama', 'Bedrock', 'OpenRouter', 'Azure OpenAI', 'OpenAI-compatible', '9Router'];
+const vcsProviders = ['GitHub', 'GitLab', 'Gitea', 'Azure DevOps', 'Bitbucket Cloud', 'Bitbucket Server'];
+---
+
+<Layout>
+  <section class="hero">
+    <div class="container">
+      <h1>AI code review<br /><span class="grad">on your terms</span></h1>
+      <p>
+        ArgusReview drops AI-powered reviews straight into your pull/merge requests — with your LLM,
+        your coding conventions, and your language. Runs fully client-side in your CI.
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href={`${base}config`}>⚡ Build your config</a>
+        <a class="btn btn-ghost" href="https://github.com/sang-hv/ai-code-review" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="container">
+      <h2>Features</h2>
+      <p class="lead">Everything you need for a review bot you actually control.</p>
+      <div class="grid">
+        {features.map((f) => (
+          <div class="card">
+            <span class="ico">{f.ico}</span>
+            <h3>{f.title}</h3>
+            <p>{f.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="providers">
+    <div class="container">
+      <h2>Works with your stack</h2>
+      <p class="lead">Switch providers anytime — just change a value.</p>
+      <div class="grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="card">
+          <h3>🤖 LLM providers</h3>
+          <div class="pill-row" style="margin-top:14px;">
+            {llmProviders.map((p) => <span class="pill">{p}</span>)}
+          </div>
+        </div>
+        <div class="card">
+          <h3>🗂️ Version control</h3>
+          <div class="pill-row" style="margin-top:14px;">
+            {vcsProviders.map((p) => <span class="pill">{p}</span>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="container">
+      <h2>About</h2>
+      <p class="lead">Maintained as a personal fork with extra providers, coding-convention loading, and a config builder.</p>
+      <div class="card about-card">
+        <div class="avatar">HS</div>
+        <div class="meta">
+          <p><strong>Hoang Van Sang</strong> — maintainer</p>
+          <p>📧 <a href="mailto:supersentaj@gmail.com">supersentaj@gmail.com</a></p>
+          <p>🐙 <a href="https://github.com/sang-hv" target="_blank" rel="noopener">github.com/sang-hv</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
