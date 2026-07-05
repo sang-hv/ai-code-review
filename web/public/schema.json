@@ -1,0 +1,2906 @@
+{
+  "$defs": {
+    "AgentConfig": {
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "max_iterations": {
+          "default": 25,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Iterations",
+          "type": "integer"
+        },
+        "allow_commands": {
+          "items": {
+            "format": "regex",
+            "type": "string"
+          },
+          "title": "Allow Commands",
+          "type": "array"
+        },
+        "command_timeout": {
+          "default": 10,
+          "maximum": 120,
+          "minimum": 1,
+          "title": "Command Timeout",
+          "type": "integer"
+        },
+        "max_total_context_chars": {
+          "default": 40000,
+          "maximum": 500000,
+          "minimum": 1000,
+          "title": "Max Total Context Chars",
+          "type": "integer"
+        },
+        "max_command_output_chars": {
+          "default": 40000,
+          "maximum": 500000,
+          "minimum": 1000,
+          "title": "Max Command Output Chars",
+          "type": "integer"
+        }
+      },
+      "title": "AgentConfig",
+      "type": "object"
+    },
+    "ArtifactsConfig": {
+      "properties": {
+        "llm_dir": {
+          "default": "artifacts/llm",
+          "format": "directory-path",
+          "title": "Llm Dir",
+          "type": "string"
+        },
+        "vcs_dir": {
+          "default": "artifacts/vcs",
+          "format": "directory-path",
+          "title": "Vcs Dir",
+          "type": "string"
+        },
+        "llm_enabled": {
+          "default": false,
+          "title": "Llm Enabled",
+          "type": "boolean"
+        },
+        "vcs_enabled": {
+          "default": false,
+          "title": "Vcs Enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "ArtifactsConfig",
+      "type": "object"
+    },
+    "AzureDevOpsHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        },
+        "api_version": {
+          "default": "7.0",
+          "title": "Api Version",
+          "type": "string"
+        },
+        "api_token_type": {
+          "$ref": "#/$defs/AzureDevOpsTokenType",
+          "default": "OAUTH2"
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "AzureDevOpsHTTPClientConfig",
+      "type": "object"
+    },
+    "AzureDevOpsPipelineConfig": {
+      "properties": {
+        "organization": {
+          "title": "Organization",
+          "type": "string"
+        },
+        "project": {
+          "title": "Project",
+          "type": "string"
+        },
+        "repository_id": {
+          "title": "Repository Id",
+          "type": "string"
+        },
+        "pull_request_id": {
+          "title": "Pull Request Id",
+          "type": "integer"
+        },
+        "iteration_id": {
+          "title": "Iteration Id",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "organization",
+        "project",
+        "repository_id",
+        "pull_request_id",
+        "iteration_id"
+      ],
+      "title": "AzureDevOpsPipelineConfig",
+      "type": "object"
+    },
+    "AzureDevOpsTokenType": {
+      "enum": [
+        "PAT",
+        "OAUTH2"
+      ],
+      "title": "AzureDevOpsTokenType",
+      "type": "string"
+    },
+    "AzureDevOpsVCSConfig": {
+      "properties": {
+        "provider": {
+          "const": "AZURE_DEVOPS",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/$defs/VCSPaginationConfig",
+          "default": {
+            "per_page": 100,
+            "max_pages": 5
+          }
+        },
+        "pipeline": {
+          "$ref": "#/$defs/AzureDevOpsPipelineConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/AzureDevOpsHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "pipeline",
+        "http_client"
+      ],
+      "title": "AzureDevOpsVCSConfig",
+      "type": "object"
+    },
+    "AzureOpenAIHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        },
+        "api_version": {
+          "default": "2024-06-01",
+          "title": "Api Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "AzureOpenAIHTTPClientConfig",
+      "type": "object"
+    },
+    "AzureOpenAILLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "AZURE_OPENAI",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/AzureOpenAIMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/AzureOpenAIHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "AzureOpenAILLMConfig",
+      "type": "object"
+    },
+    "AzureOpenAIMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "gpt-4o-mini",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        }
+      },
+      "title": "AzureOpenAIMetaConfig",
+      "type": "object"
+    },
+    "BedrockHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "region": {
+          "default": "us-east-1",
+          "title": "Region",
+          "type": "string"
+        },
+        "access_key": {
+          "title": "Access Key",
+          "type": "string"
+        },
+        "secret_key": {
+          "title": "Secret Key",
+          "type": "string"
+        },
+        "session_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Session Token"
+        }
+      },
+      "required": [
+        "api_url",
+        "access_key",
+        "secret_key"
+      ],
+      "title": "BedrockHTTPClientConfig",
+      "type": "object"
+    },
+    "BedrockLLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "BEDROCK",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/BedrockMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/BedrockHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "BedrockLLMConfig",
+      "type": "object"
+    },
+    "BedrockMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "anthropic.claude-3-sonnet-20240229-v1:0",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        }
+      },
+      "title": "BedrockMetaConfig",
+      "type": "object"
+    },
+    "BitbucketCloudHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "BitbucketCloudHTTPClientConfig",
+      "type": "object"
+    },
+    "BitbucketCloudPipelineConfig": {
+      "properties": {
+        "workspace": {
+          "title": "Workspace",
+          "type": "string"
+        },
+        "repo_slug": {
+          "title": "Repo Slug",
+          "type": "string"
+        },
+        "pull_request_id": {
+          "title": "Pull Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace",
+        "repo_slug",
+        "pull_request_id"
+      ],
+      "title": "BitbucketCloudPipelineConfig",
+      "type": "object"
+    },
+    "BitbucketCloudVCSConfig": {
+      "properties": {
+        "provider": {
+          "const": "BITBUCKET_CLOUD",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/$defs/VCSPaginationConfig",
+          "default": {
+            "per_page": 100,
+            "max_pages": 5
+          }
+        },
+        "pipeline": {
+          "$ref": "#/$defs/BitbucketCloudPipelineConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/BitbucketCloudHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "pipeline",
+        "http_client"
+      ],
+      "title": "BitbucketCloudVCSConfig",
+      "type": "object"
+    },
+    "BitbucketServerHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "BitbucketServerHTTPClientConfig",
+      "type": "object"
+    },
+    "BitbucketServerPipelineConfig": {
+      "properties": {
+        "project_key": {
+          "title": "Project Key",
+          "type": "string"
+        },
+        "repo_slug": {
+          "title": "Repo Slug",
+          "type": "string"
+        },
+        "pull_request_id": {
+          "title": "Pull Request Id",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "project_key",
+        "repo_slug",
+        "pull_request_id"
+      ],
+      "title": "BitbucketServerPipelineConfig",
+      "type": "object"
+    },
+    "BitbucketServerVCSConfig": {
+      "properties": {
+        "provider": {
+          "const": "BITBUCKET_SERVER",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/$defs/VCSPaginationConfig",
+          "default": {
+            "per_page": 100,
+            "max_pages": 5
+          }
+        },
+        "pipeline": {
+          "$ref": "#/$defs/BitbucketServerPipelineConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/BitbucketServerHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "pipeline",
+        "http_client"
+      ],
+      "title": "BitbucketServerVCSConfig",
+      "type": "object"
+    },
+    "ClaudeHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        },
+        "api_version": {
+          "default": "2023-06-01",
+          "title": "Api Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "ClaudeHTTPClientConfig",
+      "type": "object"
+    },
+    "ClaudeLLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "CLAUDE",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/ClaudeMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/ClaudeHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "ClaudeLLMConfig",
+      "type": "object"
+    },
+    "ClaudeMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "claude-3-sonnet",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        }
+      },
+      "title": "ClaudeMetaConfig",
+      "type": "object"
+    },
+    "ConventionModesConfig": {
+      "description": "Toggle convention injection per review mode. All enabled by default.",
+      "properties": {
+        "inline": {
+          "default": true,
+          "title": "Inline",
+          "type": "boolean"
+        },
+        "context": {
+          "default": true,
+          "title": "Context",
+          "type": "boolean"
+        },
+        "summary": {
+          "default": true,
+          "title": "Summary",
+          "type": "boolean"
+        },
+        "inline_reply": {
+          "default": true,
+          "title": "Inline Reply",
+          "type": "boolean"
+        },
+        "summary_reply": {
+          "default": true,
+          "title": "Summary Reply",
+          "type": "boolean"
+        }
+      },
+      "title": "ConventionModesConfig",
+      "type": "object"
+    },
+    "ConventionsConfig": {
+      "description": "Project coding conventions injected into every review prompt.\n\nPoint `sources` at local docs, a raw URL, or a git repo containing `.md`\nfiles. They are combined into a single `## <heading>` section and appended\nto the review prompt for the enabled modes.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "heading": {
+          "default": "Project Coding Conventions",
+          "title": "Heading",
+          "type": "string"
+        },
+        "timeout": {
+          "default": 30,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "sources": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "git": "#/$defs/GitConventionSource",
+                "local": "#/$defs/LocalConventionSource",
+                "url": "#/$defs/UrlConventionSource"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/LocalConventionSource"
+              },
+              {
+                "$ref": "#/$defs/UrlConventionSource"
+              },
+              {
+                "$ref": "#/$defs/GitConventionSource"
+              }
+            ]
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "modes": {
+          "$ref": "#/$defs/ConventionModesConfig",
+          "default": {
+            "inline": true,
+            "context": true,
+            "summary": true,
+            "inline_reply": true,
+            "summary_reply": true
+          }
+        }
+      },
+      "title": "ConventionsConfig",
+      "type": "object"
+    },
+    "CoreConfig": {
+      "properties": {
+        "concurrency": {
+          "default": 7,
+          "title": "Concurrency",
+          "type": "integer"
+        }
+      },
+      "title": "CoreConfig",
+      "type": "object"
+    },
+    "GeminiHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "GeminiHTTPClientConfig",
+      "type": "object"
+    },
+    "GeminiLLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "GEMINI",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/GeminiMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/GeminiHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "GeminiLLMConfig",
+      "type": "object"
+    },
+    "GeminiMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "gemini-2.0-pro",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        }
+      },
+      "title": "GeminiMetaConfig",
+      "type": "object"
+    },
+    "GitConventionSource": {
+      "description": "Coding-convention `.md` docs pulled from a git repository.",
+      "properties": {
+        "type": {
+          "const": "git",
+          "default": "git",
+          "title": "Type",
+          "type": "string"
+        },
+        "repo": {
+          "title": "Repo",
+          "type": "string"
+        },
+        "ref": {
+          "default": "main",
+          "title": "Ref",
+          "type": "string"
+        },
+        "path": {
+          "default": ".",
+          "title": "Path",
+          "type": "string"
+        },
+        "glob": {
+          "default": "**/*.md",
+          "title": "Glob",
+          "type": "string"
+        },
+        "token": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Token"
+        }
+      },
+      "required": [
+        "repo"
+      ],
+      "title": "GitConventionSource",
+      "type": "object"
+    },
+    "GitHubHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "GitHubHTTPClientConfig",
+      "type": "object"
+    },
+    "GitHubPipelineConfig": {
+      "properties": {
+        "repo": {
+          "title": "Repo",
+          "type": "string"
+        },
+        "owner": {
+          "title": "Owner",
+          "type": "string"
+        },
+        "pull_number": {
+          "title": "Pull Number",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "owner",
+        "pull_number"
+      ],
+      "title": "GitHubPipelineConfig",
+      "type": "object"
+    },
+    "GitHubVCSConfig": {
+      "properties": {
+        "provider": {
+          "const": "GITHUB",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/$defs/VCSPaginationConfig",
+          "default": {
+            "per_page": 100,
+            "max_pages": 5
+          }
+        },
+        "pipeline": {
+          "$ref": "#/$defs/GitHubPipelineConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/GitHubHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "pipeline",
+        "http_client"
+      ],
+      "title": "GitHubVCSConfig",
+      "type": "object"
+    },
+    "GitLabHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "GitLabHTTPClientConfig",
+      "type": "object"
+    },
+    "GitLabPipelineConfig": {
+      "properties": {
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "merge_request_id": {
+          "title": "Merge Request Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "merge_request_id"
+      ],
+      "title": "GitLabPipelineConfig",
+      "type": "object"
+    },
+    "GitLabVCSConfig": {
+      "properties": {
+        "provider": {
+          "const": "GITLAB",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/$defs/VCSPaginationConfig",
+          "default": {
+            "per_page": 100,
+            "max_pages": 5
+          }
+        },
+        "pipeline": {
+          "$ref": "#/$defs/GitLabPipelineConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/GitLabHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "pipeline",
+        "http_client"
+      ],
+      "title": "GitLabVCSConfig",
+      "type": "object"
+    },
+    "GiteaHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "GiteaHTTPClientConfig",
+      "type": "object"
+    },
+    "GiteaPipelineConfig": {
+      "properties": {
+        "repo": {
+          "title": "Repo",
+          "type": "string"
+        },
+        "owner": {
+          "title": "Owner",
+          "type": "string"
+        },
+        "pull_number": {
+          "title": "Pull Number",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo",
+        "owner",
+        "pull_number"
+      ],
+      "title": "GiteaPipelineConfig",
+      "type": "object"
+    },
+    "GiteaVCSConfig": {
+      "properties": {
+        "provider": {
+          "const": "GITEA",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/$defs/VCSPaginationConfig",
+          "default": {
+            "per_page": 100,
+            "max_pages": 5
+          }
+        },
+        "pipeline": {
+          "$ref": "#/$defs/GiteaPipelineConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/GiteaHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "pipeline",
+        "http_client"
+      ],
+      "title": "GiteaVCSConfig",
+      "type": "object"
+    },
+    "LocalConventionSource": {
+      "description": "A coding-convention document (or folder of `.md` docs) on the local filesystem.",
+      "properties": {
+        "type": {
+          "const": "local",
+          "default": "local",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "glob": {
+          "default": "**/*.md",
+          "title": "Glob",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "LocalConventionSource",
+      "type": "object"
+    },
+    "LoggerConfig": {
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/LoggerLevel",
+          "default": "INFO"
+        },
+        "format": {
+          "default": "{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[logger_name]} | {message}",
+          "title": "Format",
+          "type": "string"
+        }
+      },
+      "title": "LoggerConfig",
+      "type": "object"
+    },
+    "LoggerLevel": {
+      "enum": [
+        "NOTSET",
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ],
+      "title": "LoggerLevel",
+      "type": "string"
+    },
+    "NineRouterHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "default": "http://localhost:20128/v1",
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Token"
+        }
+      },
+      "title": "NineRouterHTTPClientConfig",
+      "type": "object"
+    },
+    "NineRouterLLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "9ROUTER",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/NineRouterMetaConfig",
+          "default": {
+            "model": "gpt-4o-mini",
+            "max_tokens": null,
+            "temperature": null
+          }
+        },
+        "http_client": {
+          "$ref": "#/$defs/NineRouterHTTPClientConfig",
+          "default": {
+            "verify": true,
+            "timeout": 120.0,
+            "api_url": "http://localhost:20128/v1",
+            "proxy_url": null,
+            "api_token": null
+          }
+        }
+      },
+      "required": [
+        "provider"
+      ],
+      "title": "NineRouterLLMConfig",
+      "type": "object"
+    },
+    "NineRouterMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "gpt-4o-mini",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        }
+      },
+      "title": "NineRouterMetaConfig",
+      "type": "object"
+    },
+    "OllamaHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        }
+      },
+      "required": [
+        "api_url"
+      ],
+      "title": "OllamaHTTPClientConfig",
+      "type": "object"
+    },
+    "OllamaLLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "OLLAMA",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/OllamaMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/OllamaHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "OllamaLLMConfig",
+      "type": "object"
+    },
+    "OllamaMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "llama2",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "stop": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
+        "num_ctx": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Ctx"
+        },
+        "repeat_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repeat Penalty"
+        }
+      },
+      "title": "OllamaMetaConfig",
+      "type": "object"
+    },
+    "OpenAICompatibleHTTPClientConfig": {
+      "description": "HTTP config for any OpenAI-compatible endpoint.\n\nUnlike the first-party providers, the API token is optional here so that\nlocal gateways (9Router, vLLM, LocalAI, Ollama-compatible servers, ...) that\ndon't require authentication work out of the box.",
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Token"
+        }
+      },
+      "required": [
+        "api_url"
+      ],
+      "title": "OpenAICompatibleHTTPClientConfig",
+      "type": "object"
+    },
+    "OpenAICompatibleLLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "OPENAI_COMPATIBLE",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/OpenAICompatibleMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/OpenAICompatibleHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "OpenAICompatibleLLMConfig",
+      "type": "object"
+    },
+    "OpenAICompatibleMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "gpt-4o-mini",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        }
+      },
+      "title": "OpenAICompatibleMetaConfig",
+      "type": "object"
+    },
+    "OpenAIHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "OpenAIHTTPClientConfig",
+      "type": "object"
+    },
+    "OpenAILLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "OPENAI",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/OpenAIMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/OpenAIHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "OpenAILLMConfig",
+      "type": "object"
+    },
+    "OpenAIMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "gpt-4o-mini",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        }
+      },
+      "title": "OpenAIMetaConfig",
+      "type": "object"
+    },
+    "OpenRouterHTTPClientConfig": {
+      "properties": {
+        "verify": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": true,
+          "title": "Verify"
+        },
+        "timeout": {
+          "default": 120,
+          "title": "Timeout",
+          "type": "number"
+        },
+        "api_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Api Url",
+          "type": "string"
+        },
+        "proxy_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proxy Url"
+        },
+        "api_token": {
+          "format": "password",
+          "title": "Api Token",
+          "type": "string",
+          "writeOnly": true
+        }
+      },
+      "required": [
+        "api_url",
+        "api_token"
+      ],
+      "title": "OpenRouterHTTPClientConfig",
+      "type": "object"
+    },
+    "OpenRouterLLMConfig": {
+      "properties": {
+        "provider": {
+          "const": "OPENROUTER",
+          "title": "Provider",
+          "type": "string"
+        },
+        "pricing_file": {
+          "anyOf": [
+            {
+              "format": "file-path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing File"
+        },
+        "meta": {
+          "$ref": "#/$defs/OpenRouterMetaConfig"
+        },
+        "http_client": {
+          "$ref": "#/$defs/OpenRouterHTTPClientConfig"
+        }
+      },
+      "required": [
+        "provider",
+        "meta",
+        "http_client"
+      ],
+      "title": "OpenRouterLLMConfig",
+      "type": "object"
+    },
+    "OpenRouterMetaConfig": {
+      "properties": {
+        "model": {
+          "default": "openai/gpt-4o-mini",
+          "title": "Model",
+          "type": "string"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "maximum": 2.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "referer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Referer"
+        }
+      },
+      "title": "OpenRouterMetaConfig",
+      "type": "object"
+    },
+    "PromptConfig": {
+      "properties": {
+        "context": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Context",
+          "type": "object"
+        },
+        "normalize_prompts": {
+          "default": true,
+          "title": "Normalize Prompts",
+          "type": "boolean"
+        },
+        "context_placeholder": {
+          "default": "<<{value}>>",
+          "title": "Context Placeholder",
+          "type": "string"
+        },
+        "agent_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agent Prompt Files"
+        },
+        "inline_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inline Prompt Files"
+        },
+        "context_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Prompt Files"
+        },
+        "summary_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary Prompt Files"
+        },
+        "inline_reply_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inline Reply Prompt Files"
+        },
+        "summary_reply_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary Reply Prompt Files"
+        },
+        "system_agent_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Agent Prompt Files"
+        },
+        "system_inline_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Inline Prompt Files"
+        },
+        "system_context_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Context Prompt Files"
+        },
+        "system_summary_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Summary Prompt Files"
+        },
+        "system_inline_reply_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Inline Reply Prompt Files"
+        },
+        "system_summary_reply_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Summary Reply Prompt Files"
+        },
+        "include_agent_system_prompts": {
+          "default": true,
+          "title": "Include Agent System Prompts",
+          "type": "boolean"
+        },
+        "include_inline_system_prompts": {
+          "default": true,
+          "title": "Include Inline System Prompts",
+          "type": "boolean"
+        },
+        "include_context_system_prompts": {
+          "default": true,
+          "title": "Include Context System Prompts",
+          "type": "boolean"
+        },
+        "include_summary_system_prompts": {
+          "default": true,
+          "title": "Include Summary System Prompts",
+          "type": "boolean"
+        },
+        "include_inline_reply_system_prompts": {
+          "default": true,
+          "title": "Include Inline Reply System Prompts",
+          "type": "boolean"
+        },
+        "include_summary_reply_system_prompts": {
+          "default": true,
+          "title": "Include Summary Reply System Prompts",
+          "type": "boolean"
+        }
+      },
+      "title": "PromptConfig",
+      "type": "object"
+    },
+    "ReviewConfig": {
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/ReviewMode",
+          "default": "FULL_FILE_DIFF"
+        },
+        "dry_run": {
+          "default": false,
+          "title": "Dry Run",
+          "type": "boolean"
+        },
+        "language": {
+          "default": "English",
+          "title": "Language",
+          "type": "string"
+        },
+        "inline_tag": {
+          "default": "#ai-review-inline",
+          "title": "Inline Tag",
+          "type": "string"
+        },
+        "inline_reply_tag": {
+          "default": "#ai-review-inline-reply",
+          "title": "Inline Reply Tag",
+          "type": "string"
+        },
+        "inline_fallback_tag": {
+          "default": "#ai-review-inline-fallback",
+          "title": "Inline Fallback Tag",
+          "type": "string"
+        },
+        "summary_tag": {
+          "default": "#ai-review-summary",
+          "title": "Summary Tag",
+          "type": "string"
+        },
+        "summary_reply_tag": {
+          "default": "#ai-review-summary-reply",
+          "title": "Summary Reply Tag",
+          "type": "string"
+        },
+        "context_lines": {
+          "default": 10,
+          "minimum": 0,
+          "title": "Context Lines",
+          "type": "integer"
+        },
+        "allow_changes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Allow Changes",
+          "type": "array"
+        },
+        "ignore_changes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ignore Changes",
+          "type": "array"
+        },
+        "ignore_pure_renames": {
+          "default": true,
+          "title": "Ignore Pure Renames",
+          "type": "boolean"
+        },
+        "review_added_marker": {
+          "default": " # added",
+          "title": "Review Added Marker",
+          "type": "string"
+        },
+        "review_removed_marker": {
+          "default": " # removed",
+          "title": "Review Removed Marker",
+          "type": "string"
+        },
+        "max_inline_comments": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Inline Comments"
+        },
+        "max_context_comments": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Context Comments"
+        },
+        "inline_comment_fallback": {
+          "default": true,
+          "title": "Inline Comment Fallback",
+          "type": "boolean"
+        }
+      },
+      "title": "ReviewConfig",
+      "type": "object"
+    },
+    "ReviewMode": {
+      "enum": [
+        "FULL_FILE_DIFF",
+        "FULL_FILE_CURRENT",
+        "FULL_FILE_PREVIOUS",
+        "ONLY_ADDED",
+        "ONLY_REMOVED",
+        "ADDED_AND_REMOVED",
+        "ONLY_ADDED_WITH_CONTEXT",
+        "ONLY_REMOVED_WITH_CONTEXT",
+        "ADDED_AND_REMOVED_WITH_CONTEXT"
+      ],
+      "title": "ReviewMode",
+      "type": "string"
+    },
+    "UrlConventionSource": {
+      "description": "A coding-convention document fetched from an HTTPS URL (e.g. a raw `.md`).",
+      "properties": {
+        "type": {
+          "const": "url",
+          "default": "url",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "token": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Token"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "UrlConventionSource",
+      "type": "object"
+    },
+    "VCSPaginationConfig": {
+      "properties": {
+        "per_page": {
+          "default": 100,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Per Page",
+          "type": "integer"
+        },
+        "max_pages": {
+          "default": 5,
+          "minimum": 1,
+          "title": "Max Pages",
+          "type": "integer"
+        }
+      },
+      "title": "VCSPaginationConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "llm": {
+      "discriminator": {
+        "mapping": {
+          "9ROUTER": "#/$defs/NineRouterLLMConfig",
+          "AZURE_OPENAI": "#/$defs/AzureOpenAILLMConfig",
+          "BEDROCK": "#/$defs/BedrockLLMConfig",
+          "CLAUDE": "#/$defs/ClaudeLLMConfig",
+          "GEMINI": "#/$defs/GeminiLLMConfig",
+          "OLLAMA": "#/$defs/OllamaLLMConfig",
+          "OPENAI": "#/$defs/OpenAILLMConfig",
+          "OPENAI_COMPATIBLE": "#/$defs/OpenAICompatibleLLMConfig",
+          "OPENROUTER": "#/$defs/OpenRouterLLMConfig"
+        },
+        "propertyName": "provider"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/OpenAILLMConfig"
+        },
+        {
+          "$ref": "#/$defs/GeminiLLMConfig"
+        },
+        {
+          "$ref": "#/$defs/ClaudeLLMConfig"
+        },
+        {
+          "$ref": "#/$defs/OllamaLLMConfig"
+        },
+        {
+          "$ref": "#/$defs/BedrockLLMConfig"
+        },
+        {
+          "$ref": "#/$defs/OpenRouterLLMConfig"
+        },
+        {
+          "$ref": "#/$defs/AzureOpenAILLMConfig"
+        },
+        {
+          "$ref": "#/$defs/OpenAICompatibleLLMConfig"
+        },
+        {
+          "$ref": "#/$defs/NineRouterLLMConfig"
+        }
+      ],
+      "title": "Llm"
+    },
+    "vcs": {
+      "discriminator": {
+        "mapping": {
+          "AZURE_DEVOPS": "#/$defs/AzureDevOpsVCSConfig",
+          "BITBUCKET_CLOUD": "#/$defs/BitbucketCloudVCSConfig",
+          "BITBUCKET_SERVER": "#/$defs/BitbucketServerVCSConfig",
+          "GITEA": "#/$defs/GiteaVCSConfig",
+          "GITHUB": "#/$defs/GitHubVCSConfig",
+          "GITLAB": "#/$defs/GitLabVCSConfig"
+        },
+        "propertyName": "provider"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/GiteaVCSConfig"
+        },
+        {
+          "$ref": "#/$defs/GitLabVCSConfig"
+        },
+        {
+          "$ref": "#/$defs/GitHubVCSConfig"
+        },
+        {
+          "$ref": "#/$defs/AzureDevOpsVCSConfig"
+        },
+        {
+          "$ref": "#/$defs/BitbucketCloudVCSConfig"
+        },
+        {
+          "$ref": "#/$defs/BitbucketServerVCSConfig"
+        }
+      ],
+      "title": "Vcs"
+    },
+    "core": {
+      "$ref": "#/$defs/CoreConfig",
+      "default": {
+        "concurrency": 7
+      }
+    },
+    "agent": {
+      "$ref": "#/$defs/AgentConfig",
+      "default": {
+        "enabled": false,
+        "max_iterations": 25,
+        "allow_commands": [
+          "^ls(?:\\s+.*)?$",
+          "^cat(?:\\s+.*)?$",
+          "^rg(?:\\s+.*)?$",
+          "^grep(?:\\s+.*)?$",
+          "^git\\s+(?:status|show|diff|log|rev-parse|ls-files)(?:\\s+.*)?$"
+        ],
+        "command_timeout": 10,
+        "max_total_context_chars": 40000,
+        "max_command_output_chars": 40000
+      }
+    },
+    "prompt": {
+      "$ref": "#/$defs/PromptConfig",
+      "default": {
+        "context": {},
+        "normalize_prompts": true,
+        "context_placeholder": "<<{value}>>",
+        "agent_prompt_files": null,
+        "inline_prompt_files": null,
+        "context_prompt_files": null,
+        "summary_prompt_files": null,
+        "inline_reply_prompt_files": null,
+        "summary_reply_prompt_files": null,
+        "system_agent_prompt_files": null,
+        "system_inline_prompt_files": null,
+        "system_context_prompt_files": null,
+        "system_summary_prompt_files": null,
+        "system_inline_reply_prompt_files": null,
+        "system_summary_reply_prompt_files": null,
+        "include_agent_system_prompts": true,
+        "include_inline_system_prompts": true,
+        "include_context_system_prompts": true,
+        "include_summary_system_prompts": true,
+        "include_inline_reply_system_prompts": true,
+        "include_summary_reply_system_prompts": true
+      }
+    },
+    "review": {
+      "$ref": "#/$defs/ReviewConfig",
+      "default": {
+        "mode": "FULL_FILE_DIFF",
+        "dry_run": false,
+        "language": "English",
+        "inline_tag": "#ai-review-inline",
+        "inline_reply_tag": "#ai-review-inline-reply",
+        "inline_fallback_tag": "#ai-review-inline-fallback",
+        "summary_tag": "#ai-review-summary",
+        "summary_reply_tag": "#ai-review-summary-reply",
+        "context_lines": 10,
+        "allow_changes": [],
+        "ignore_changes": [],
+        "ignore_pure_renames": true,
+        "review_added_marker": " # added",
+        "review_removed_marker": " # removed",
+        "max_inline_comments": null,
+        "max_context_comments": null,
+        "inline_comment_fallback": true
+      }
+    },
+    "conventions": {
+      "$ref": "#/$defs/ConventionsConfig",
+      "default": {
+        "enabled": false,
+        "heading": "Project Coding Conventions",
+        "timeout": 30.0,
+        "sources": [],
+        "modes": {
+          "context": true,
+          "inline": true,
+          "inline_reply": true,
+          "summary": true,
+          "summary_reply": true
+        }
+      }
+    },
+    "logger": {
+      "$ref": "#/$defs/LoggerConfig",
+      "default": {
+        "level": "INFO",
+        "format": "{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[logger_name]} | {message}"
+      }
+    },
+    "artifacts": {
+      "$ref": "#/$defs/ArtifactsConfig",
+      "default": {
+        "llm_dir": "artifacts/llm",
+        "vcs_dir": "artifacts/vcs",
+        "llm_enabled": false,
+        "vcs_enabled": false
+      }
+    }
+  },
+  "required": [
+    "llm",
+    "vcs"
+  ],
+  "title": "Settings",
+  "type": "object"
+}

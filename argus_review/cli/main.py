@@ -116,7 +116,9 @@ def dump_schema(
     text = json.dumps(schema, indent=2, ensure_ascii=False)
 
     if output:
-        Path(output).write_text(text, encoding="utf-8")
+        path = Path(output)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
         typer.secho(f"Schema written to {output}", fg=typer.colors.GREEN, bold=True)
         return
 

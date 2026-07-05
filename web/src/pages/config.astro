@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+const base = import.meta.env.BASE_URL;
 ---
 
 <Layout title="ArgusReview — Config Builder" description="Generate your .ai-review.yaml config by picking options.">
@@ -7,12 +8,11 @@ import Layout from '../layouts/Layout.astro';
     <div class="container">
       <h2>⚡ Config Builder</h2>
       <p class="lead">
-        Pick your options — the <code>.ai-review.yaml</code> updates live. API tokens are emitted as
-        <code>{"${ENV}"}</code> placeholders, never real secrets.
+        Fields are generated live from the tool's own config schema, so they never drift from the code.
+        Tokens are emitted as <code>{"${ENV}"}</code> placeholders — never real secrets.
       </p>
 
       <div class="builder">
-        <!-- FORM -->
         <div class="form-col">
           <fieldset class="fieldset">
             <legend>LLM</legend>
@@ -20,34 +20,7 @@ import Layout from '../layouts/Layout.astro';
               <label for="llm-provider">Provider</label>
               <select id="llm-provider"></select>
             </div>
-            <div class="field">
-              <label for="llm-model">Model</label>
-              <input id="llm-model" type="text" />
-            </div>
-            <div class="field" id="wrap-llm-url">
-              <label for="llm-url">API base URL</label>
-              <input id="llm-url" type="text" />
-            </div>
-            <div class="field" id="wrap-llm-token">
-              <label for="llm-token">API token (env var name)</label>
-              <input id="llm-token" type="text" />
-              <span class="hint">Emitted as <code>{"${NAME}"}</code>. Leave empty for token-less local gateways.</span>
-            </div>
-            <div class="field" id="wrap-llm-apiversion">
-              <label for="llm-apiversion">API version</label>
-              <input id="llm-apiversion" type="text" />
-            </div>
-            <div id="wrap-bedrock">
-              <div class="field">
-                <label for="bedrock-region">AWS region</label>
-                <input id="bedrock-region" type="text" value="us-east-1" />
-              </div>
-              <div class="field">
-                <label>Access key / secret key (env var names)</label>
-                <input id="bedrock-access" type="text" value="AWS_ACCESS_KEY_ID" />
-                <input id="bedrock-secret" type="text" value="AWS_SECRET_ACCESS_KEY" style="margin-top:6px;" />
-              </div>
-            </div>
+            <div id="llm-groups"></div>
           </fieldset>
 
           <fieldset class="fieldset">
@@ -56,21 +29,7 @@ import Layout from '../layouts/Layout.astro';
               <label for="vcs-provider">Provider</label>
               <select id="vcs-provider"></select>
             </div>
-            <div class="field">
-              <label for="vcs-url">API base URL</label>
-              <input id="vcs-url" type="text" />
-            </div>
-            <div class="field">
-              <label for="vcs-token">API token (env var name)</label>
-              <input id="vcs-token" type="text" />
-            </div>
-            <div id="vcs-pipeline"></div>
-            <div class="field">
-              <div class="checkbox-row">
-                <input id="vcs-verify" type="checkbox" checked />
-                <label for="vcs-verify" style="margin:0;">Verify SSL (uncheck for self-hosted with internal CA)</label>
-              </div>
-            </div>
+            <div id="vcs-groups"></div>
           </fieldset>
 
           <fieldset class="fieldset">
@@ -82,13 +41,7 @@ import Layout from '../layouts/Layout.astro';
             </div>
             <div class="field">
               <label for="review-mode">Mode</label>
-              <select id="review-mode">
-                <option value="FULL_FILE_DIFF" selected>FULL_FILE_DIFF</option>
-                <option value="ONLY_ADDED">ONLY_ADDED</option>
-                <option value="ADDED_AND_REMOVED">ADDED_AND_REMOVED</option>
-                <option value="ADDED_AND_REMOVED_WITH_CONTEXT">ADDED_AND_REMOVED_WITH_CONTEXT</option>
-                <option value="FULL_FILE_CURRENT">FULL_FILE_CURRENT</option>
-              </select>
+              <select id="review-mode"></select>
             </div>
           </fieldset>
 
@@ -100,15 +53,13 @@ import Layout from '../layouts/Layout.astro';
                 <label for="conv-enabled" style="margin:0;">Load project coding conventions</label>
               </div>
             </div>
-            <div class="field" id="wrap-conv-path">
-              <label for="conv-path">Local path (file or folder)</label>
+            <div class="field hidden" id="wrap-conv-path">
+              <label for="conv-path">Local path (file or folder of .md)</label>
               <input id="conv-path" type="text" value="./AGENTS.md" />
-              <span class="hint">Point at a .md file or a folder of .md files in your repo.</span>
             </div>
           </fieldset>
         </div>
 
-        <!-- OUTPUT -->
         <div class="output-col">
           <div class="output-head">
             <strong>.ai-review.yaml</strong>
@@ -117,10 +68,10 @@ import Layout from '../layouts/Layout.astro';
               <button class="btn btn-primary" id="btn-download" type="button">Download</button>
             </div>
           </div>
-          <pre class="yaml" id="yaml-out">generating…</pre>
+          <pre class="yaml" id="yaml-out" data-base={base}>loading schema…</pre>
           <p class="note">
-            Commit this file to your repo root. Set the referenced token env vars as CI/CD secrets —
-            they override the file at runtime.
+            Commit this to your repo root. Set the referenced token env vars as CI/CD secrets — they
+            override the file at runtime.
           </p>
         </div>
       </div>
@@ -129,122 +80,127 @@ import Layout from '../layouts/Layout.astro';
 
   <script>
     import yaml from 'js-yaml';
-
-    const LLM = {
-      OPENAI: { model: 'gpt-4o-mini', url: 'https://api.openai.com/v1', tokenEnv: 'OPENAI_API_KEY' },
-      GEMINI: { model: 'gemini-2.0-pro', url: 'https://generativelanguage.googleapis.com', tokenEnv: 'GEMINI_API_KEY' },
-      CLAUDE: { model: 'claude-3-5-sonnet', url: 'https://api.anthropic.com', tokenEnv: 'CLAUDE_API_KEY', apiVersion: '2023-06-01' },
-      OLLAMA: { model: 'llama2', url: 'http://localhost:11434', tokenEnv: '' },
-      BEDROCK: { model: 'anthropic.claude-3-sonnet-20240229-v1:0', url: 'https://bedrock-runtime.us-east-1.amazonaws.com', tokenEnv: '', bedrock: true },
-      OPENROUTER: { model: 'openai/gpt-4o-mini', url: 'https://openrouter.ai/api/v1', tokenEnv: 'OPENROUTER_API_KEY' },
-      AZURE_OPENAI: { model: 'gpt-4o-mini', url: 'https://<resource>.openai.azure.com', tokenEnv: 'AZURE_OPENAI_API_KEY', apiVersion: '2024-06-01' },
-      OPENAI_COMPATIBLE: { model: 'meta-llama/llama-3.1-70b-instruct', url: 'https://my-router.example.com/v1', tokenEnv: 'LLM_API_TOKEN' },
-      '9ROUTER': { model: 'gpt-4o-mini', url: 'http://localhost:20128/v1', tokenEnv: '' },
-    };
-
-    const VCS = {
-      GITHUB: { url: 'https://api.github.com', tokenEnv: 'GITHUB_TOKEN', pipeline: { owner: '${GITHUB_REPOSITORY_OWNER}', repo: '${GITHUB_REPOSITORY_NAME}', pull_number: '${PR_NUMBER}' } },
-      GITLAB: { url: '${CI_SERVER_URL}', tokenEnv: 'GITLAB_API_TOKEN', pipeline: { project_id: '${CI_PROJECT_ID}', merge_request_id: '${CI_MERGE_REQUEST_IID}' } },
-      GITEA: { url: 'https://gitea.example.com/api/v1', tokenEnv: 'GITEA_TOKEN', pipeline: { owner: '${GITEA_REPOSITORY_OWNER}', repo: '${GITEA_REPOSITORY_NAME}', pull_number: '${PR_NUMBER}' } },
-      AZURE_DEVOPS: { url: 'https://dev.azure.com', tokenEnv: 'AZURE_DEVOPS_PAT', pipeline: { organization: '${AZURE_ORG}', project: '${AZURE_PROJECT}', repository_id: '${AZURE_REPO_ID}', pull_request_id: '${PR_ID}', iteration_id: '${ITERATION_ID}' } },
-      BITBUCKET_CLOUD: { url: 'https://api.bitbucket.org/2.0', tokenEnv: 'BITBUCKET_TOKEN', pipeline: { workspace: '${BITBUCKET_WORKSPACE}', repo_slug: '${BITBUCKET_REPO_SLUG}', pull_request_id: '${BITBUCKET_PR_ID}' } },
-      BITBUCKET_SERVER: { url: 'https://bitbucket.example.com/rest/api/1.0', tokenEnv: 'BITBUCKET_SERVER_TOKEN', pipeline: { project_key: '${BITBUCKET_PROJECT_KEY}', repo_slug: '${BITBUCKET_REPO_SLUG}', pull_request_id: '${BITBUCKET_PR_ID}' } },
-    };
+    import { providerKeys, variantGroups, fieldsForRef, enumValues } from '../lib/schema.js';
 
     const $ = (id) => document.getElementById(id);
+    const base = $('yaml-out').dataset.base || '/';
+    const SKIP = ['proxy_url']; // advanced, keep the form clean
 
-    // populate selects
-    for (const p of Object.keys(LLM)) $('llm-provider').add(new Option(p, p));
-    for (const p of Object.keys(VCS)) $('vcs-provider').add(new Option(p, p));
+    // UX-only suggestions (structure is 100% from schema; these just prefill blanks)
+    const URL_PREFILL = {
+      OPENAI: 'https://api.openai.com/v1', GEMINI: 'https://generativelanguage.googleapis.com',
+      CLAUDE: 'https://api.anthropic.com', OLLAMA: 'http://localhost:11434',
+      BEDROCK: 'https://bedrock-runtime.us-east-1.amazonaws.com', OPENROUTER: 'https://openrouter.ai/api/v1',
+      AZURE_OPENAI: 'https://<resource>.openai.azure.com', OPENAI_COMPATIBLE: 'https://my-router.example.com/v1',
+      GITHUB: 'https://api.github.com', GITLAB: '${CI_SERVER_URL}', GITEA: 'https://gitea.example.com/api/v1',
+      AZURE_DEVOPS: 'https://dev.azure.com', BITBUCKET_CLOUD: 'https://api.bitbucket.org/2.0',
+      BITBUCKET_SERVER: 'https://bitbucket.example.com/rest/api/1.0',
+    };
+    const TOKEN_PREFILL = {
+      access_key: 'AWS_ACCESS_KEY_ID', secret_key: 'AWS_SECRET_ACCESS_KEY',
+      'llm.api_token': 'LLM_API_TOKEN', 'vcs.api_token': 'GITLAB_API_TOKEN',
+    };
+    const ALWAYS = new Set(['model', 'api_url', 'api_token', 'access_key', 'secret_key']);
 
-    function show(el, on) { el.classList.toggle('hidden', !on); }
+    let schema = null;
 
-    function onLlmProvider() {
-      const p = $('llm-provider').value;
-      const m = LLM[p];
-      $('llm-model').value = m.model;
-      $('llm-url').value = m.url;
-      $('llm-token').value = m.tokenEnv;
-      $('llm-apiversion').value = m.apiVersion || '';
-      show($('wrap-llm-apiversion'), !!m.apiVersion);
-      show($('wrap-bedrock'), !!m.bedrock);
-      show($('wrap-llm-token'), !m.bedrock);
-      render();
-    }
-
-    function renderPipeline() {
-      const p = $('vcs-provider').value;
-      const wrap = $('vcs-pipeline');
-      wrap.innerHTML = '';
-      const pipe = VCS[p].pipeline;
-      for (const [key, val] of Object.entries(pipe)) {
-        const field = document.createElement('div');
-        field.className = 'field';
-        field.innerHTML = `<label>pipeline.${key}</label><input type="text" data-pipe="${key}" value="${val}" />`;
-        wrap.appendChild(field);
+    function fieldRow(section, group, f) {
+      const id = `f-${section}-${group}-${f.name}`;
+      const label = `${group}.${f.name}${f.required ? ' *' : ''}`;
+      let control;
+      if (f.kind === 'bool') {
+        const checked = f.default === true ? 'checked' : '';
+        control = `<div class="checkbox-row"><input type="checkbox" id="${id}" ${checked}
+          data-section="${section}" data-group="${group}" data-name="${f.name}" data-kind="bool" data-default="${f.default}" />
+          <label for="${id}" style="margin:0;">${label}</label></div>`;
+        return `<div class="field">${control}</div>`;
       }
-      wrap.querySelectorAll('input').forEach((i) => i.addEventListener('input', render));
+      if (f.kind === 'enum') {
+        const opts = f.options.map((o) => `<option value="${o}" ${o === f.default ? 'selected' : ''}>${o}</option>`).join('');
+        control = `<select id="${id}" data-section="${section}" data-group="${group}" data-name="${f.name}" data-kind="enum" data-default="${f.default}">${opts}</select>`;
+      } else {
+        const type = f.kind === 'number' ? 'number' : 'text';
+        let val = f.default ?? '';
+        if (f.name === 'api_url' && URL_PREFILL[currentProvider(section)]) val = URL_PREFILL[currentProvider(section)];
+        if (f.kind === 'password') val = TOKEN_PREFILL[f.name] || TOKEN_PREFILL[`${section}.${f.name}`] || 'API_TOKEN';
+        control = `<input type="${type}" id="${id}" value="${val}"
+          data-section="${section}" data-group="${group}" data-name="${f.name}" data-kind="${f.kind}" data-default="${f.default}" data-required="${f.required}" />`;
+      }
+      const hint = f.kind === 'password' ? '<span class="hint">Env var name — emitted wrapped in ${...}.</span>' : '';
+      return `<div class="field"><label for="${id}">${label}</label>${control}${hint}</div>`;
     }
 
-    function onVcsProvider() {
-      const p = $('vcs-provider').value;
-      const m = VCS[p];
-      $('vcs-url').value = m.url;
-      $('vcs-token').value = m.tokenEnv;
-      renderPipeline();
-      render();
+    function currentProvider(section) { return $(`${section}-provider`).value; }
+
+    function renderGroups(section) {
+      const provider = currentProvider(section);
+      const container = $(`${section}-groups`);
+      const groups = variantGroups(schema, section, provider);
+      container.innerHTML = groups
+        .map((g) => fieldsForRef(schema, g.ref, { skip: SKIP }).map((f) => fieldRow(section, g.name, f)).join(''))
+        .join('');
+      container.querySelectorAll('input, select').forEach((el) => el.addEventListener('input', render));
     }
 
-    function envRef(name) { return name ? '${' + name + '}' : null; }
+    function coerce(el) {
+      const kind = el.dataset.kind;
+      if (kind === 'bool') return el.checked;
+      const raw = el.value.trim();
+      if (raw === '') return null;
+      if (kind === 'number') return Number(raw);
+      if (kind === 'password') return '${' + raw + '}';
+      return raw;
+    }
+
+    function collectSection(section) {
+      const obj = { provider: currentProvider(section) };
+      $(`${section}-groups`).querySelectorAll('input, select').forEach((el) => {
+        const { group, name, kind } = el.dataset;
+        const value = coerce(el);
+        const def = el.dataset.default;
+        const isDefault = value !== null && String(value) === def;
+        const required = el.dataset.required === 'true' || kind === 'bool';
+        // keep it minimal: always-essential fields, required fields, or changed-from-default
+        const keep = ALWAYS.has(name) || required || (value !== null && !isDefault && !(kind === 'bool' && value === (def === 'true')));
+        if (value === null || !keep) return;
+        (obj[group] ??= {})[name] = value;
+      });
+      return obj;
+    }
 
     function render() {
-      const lp = $('llm-provider').value;
-      const lm = LLM[lp];
-
-      const llmHttp = { verify: true, timeout: 120, api_url: $('llm-url').value };
-      if (lm.bedrock) {
-        llmHttp.region = $('bedrock-region').value;
-        llmHttp.access_key = envRef($('bedrock-access').value);
-        llmHttp.secret_key = envRef($('bedrock-secret').value);
-      } else {
-        const t = envRef($('llm-token').value.trim());
-        if (t) llmHttp.api_token = t;
-      }
-      if (!$('wrap-llm-apiversion').classList.contains('hidden') && $('llm-apiversion').value) {
-        llmHttp.api_version = $('llm-apiversion').value;
-      }
-
-      const pipeline = {};
-      $('vcs-pipeline').querySelectorAll('input[data-pipe]').forEach((i) => {
-        pipeline[i.dataset.pipe] = i.value;
-      });
-      const vcsHttp = { timeout: 120, api_url: $('vcs-url').value, api_token: envRef($('vcs-token').value.trim()) || '${VCS_API_TOKEN}' };
-      if (!$('vcs-verify').checked) vcsHttp.verify = false;
-
+      if (!schema) return;
       const config = {
-        llm: { provider: lp, meta: { model: $('llm-model').value, max_tokens: 15000, temperature: 0.3 }, http_client: llmHttp },
-        vcs: { provider: $('vcs-provider').value, pipeline, http_client: vcsHttp },
+        llm: collectSection('llm'),
+        vcs: collectSection('vcs'),
         review: { mode: $('review-mode').value, language: $('review-language').value || 'English' },
       };
-
       if ($('conv-enabled').checked) {
         config.conventions = { enabled: true, sources: [{ type: 'local', path: $('conv-path').value }] };
       }
-
       const body = yaml.dump(config, { indent: 2, lineWidth: 100, quotingType: '"' });
       $('yaml-out').textContent =
         '# .ai-review.yaml — generated by the ArgusReview config builder\n' +
-        '# Token env vars (${...}) must be provided as CI/CD secrets at runtime.\n\n' +
-        body;
+        '# Token env vars (${...}) must be provided as CI/CD secrets at runtime.\n\n' + body;
     }
 
-    // wire up
-    ['llm-model', 'llm-url', 'llm-token', 'llm-apiversion', 'bedrock-region', 'bedrock-access', 'bedrock-secret',
-     'vcs-url', 'vcs-token', 'vcs-verify', 'review-language', 'review-mode', 'conv-enabled', 'conv-path']
-      .forEach((id) => $(id).addEventListener('input', render));
-    $('llm-provider').addEventListener('change', onLlmProvider);
-    $('vcs-provider').addEventListener('change', onVcsProvider);
-    $('conv-enabled').addEventListener('change', () => { show($('wrap-conv-path'), $('conv-enabled').checked); render(); });
+    async function init() {
+      const res = await fetch(`${base}schema.json`);
+      schema = await res.json();
+
+      for (const p of providerKeys(schema, 'llm')) $('llm-provider').add(new Option(p, p, p === 'OPENAI', p === 'OPENAI'));
+      for (const p of providerKeys(schema, 'vcs')) $('vcs-provider').add(new Option(p, p, p === 'GITHUB', p === 'GITHUB'));
+      for (const m of enumValues(schema, '#/$defs/ReviewMode')) $('review-mode').add(new Option(m, m));
+
+      $('llm-provider').addEventListener('change', () => { renderGroups('llm'); render(); });
+      $('vcs-provider').addEventListener('change', () => { renderGroups('vcs'); render(); });
+      ['review-language', 'review-mode', 'conv-enabled', 'conv-path'].forEach((id) => $(id).addEventListener('input', render));
+      $('conv-enabled').addEventListener('change', () => { $('wrap-conv-path').classList.toggle('hidden', !$('conv-enabled').checked); render(); });
+
+      renderGroups('llm');
+      renderGroups('vcs');
+      render();
+    }
 
     $('btn-copy').addEventListener('click', async () => {
       await navigator.clipboard.writeText($('yaml-out').textContent || '');
@@ -260,9 +216,6 @@ import Layout from '../layouts/Layout.astro';
       URL.revokeObjectURL(a.href);
     });
 
-    // init
-    onLlmProvider();
-    onVcsProvider();
-    show($('wrap-conv-path'), false);
+    init();
   </script>
 </Layout>
