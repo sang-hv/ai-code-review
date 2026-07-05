@@ -29,6 +29,29 @@ environment variables or CI/CD secrets — no need to edit the committed file pe
 
 ---
 
+## 🔑 Secrets & tokens (important)
+
+Values in a YAML/JSON config file are used **literally** — `${...}` is **not**
+expanded. So do **not** put real secrets there, and don't rely on
+`api_token: ${OPENAI_API_KEY}` in the file resolving to your key (it won't).
+
+Instead, pass secrets as **environment variables**, which override the file:
+
+```bash
+LLM__HTTP_CLIENT__API_TOKEN=sk-...      # your LLM key (from a CI secret)
+VCS__HTTP_CLIENT__API_TOKEN=...         # VCS token (often a CI-provided token)
+```
+
+Recommended split:
+- **Config file** (committed): provider, model, api_url, review, conventions, agent — nothing secret.
+- **Env vars / CI secrets**: all tokens/keys, and the dynamic pipeline context
+  (`VCS__PIPELINE__*`) which your CI provides via predefined variables.
+
+The [config builder](../../web) generates both halves for you: a clean
+`.ai-review.yaml` plus the matching CI job and the list of secrets to create.
+
+---
+
 ## ⚙️ Override file paths
 
 You can override default config locations using environment variables:

@@ -3,13 +3,14 @@ import Layout from '../layouts/Layout.astro';
 const base = import.meta.env.BASE_URL;
 ---
 
-<Layout title="ArgusReview — Config Builder" description="Generate your .ai-review.yaml config by picking options.">
+<Layout title="ArgusReview — Config Builder" description="Generate your .ai-review.yaml + CI setup by picking options.">
   <section class="section" style="border-top:none; padding-top:40px;">
     <div class="container">
       <h2>⚡ Config Builder</h2>
       <p class="lead">
-        Fields are generated live from the tool's own config schema, so they never drift from the code.
-        Tokens are emitted as <code>{"${ENV}"}</code> placeholders — never real secrets.
+        Pick your options — get a ready <code>.ai-review.yaml</code> plus the exact CI job and secrets to add.
+        Secrets are never written into the YAML (the tool doesn't expand <code>{"${...}"}</code> in files);
+        they go into your CI as env vars.
       </p>
 
       <div class="builder">
@@ -28,8 +29,14 @@ const base = import.meta.env.BASE_URL;
             <div class="field">
               <label for="vcs-provider">Provider</label>
               <select id="vcs-provider"></select>
+              <span class="hint">Pipeline info & tokens are supplied by your CI (see the CI setup panel).</span>
             </div>
-            <div id="vcs-groups"></div>
+            <div class="field">
+              <div class="checkbox-row">
+                <input id="vcs-insecure" type="checkbox" />
+                <label for="vcs-insecure" style="margin:0;">Self-hosted with internal CA — disable SSL verify</label>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset class="fieldset">
@@ -65,15 +72,10 @@ const base = import.meta.env.BASE_URL;
               <div class="field conv-local">
                 <label for="conv-path">Local path</label>
                 <input id="conv-path" type="text" value="./AGENTS.md" />
-                <span class="hint">A .md file or a folder of .md files in your repo.</span>
               </div>
               <div class="field conv-url hidden">
                 <label for="conv-url-val">Raw .md URL</label>
                 <input id="conv-url-val" type="text" value="https://raw.githubusercontent.com/org/standards/main/STYLE.md" />
-              </div>
-              <div class="field conv-url conv-git hidden">
-                <label for="conv-token">Token env var (private only, optional)</label>
-                <input id="conv-token" type="text" value="" placeholder="e.g. CONVENTIONS_TOKEN" />
               </div>
               <div class="field conv-git hidden">
                 <label for="conv-repo">Git repo URL</label>
@@ -97,7 +99,6 @@ const base = import.meta.env.BASE_URL;
                 <input id="agent-enabled" type="checkbox" />
                 <label for="agent-enabled" style="margin:0;">Let the model explore the repo before reviewing</label>
               </div>
-              <span class="hint">Iterative ReAct loop (ls/cat/rg/git). Works best with stronger models.</span>
             </div>
             <div class="field hidden" id="wrap-agent-iter">
               <label for="agent-iter">Max iterations</label>
@@ -106,19 +107,27 @@ const base = import.meta.env.BASE_URL;
           </fieldset>
         </div>
 
-        <div class="output-col">
+        <div class="output-col" data-base={base}>
           <div class="output-head">
-            <strong>.ai-review.yaml</strong>
+            <strong>① .ai-review.yaml <span class="hint">(commit to repo root)</span></strong>
             <div style="display:flex; gap:8px;">
               <button class="btn btn-ghost" id="btn-copy" type="button">Copy</button>
               <button class="btn btn-primary" id="btn-download" type="button">Download</button>
             </div>
           </div>
-          <pre class="yaml" id="yaml-out" data-base={base}>loading schema…</pre>
-          <p class="note">
-            Commit this to your repo root. Set the referenced token env vars as CI/CD secrets — they
-            override the file at runtime.
-          </p>
+          <pre class="yaml" id="yaml-out">loading schema…</pre>
+
+          <div class="output-head" style="margin-top:22px;">
+            <strong>② CI setup — <span id="ci-platform">…</span></strong>
+            <button class="btn btn-ghost" id="btn-copy-ci" type="button">Copy</button>
+          </div>
+          <p class="note" id="ci-file"></p>
+          <pre class="yaml" id="ci-out"></pre>
+
+          <div style="margin-top:16px;">
+            <strong>③ Secrets to create in your CI</strong>
+            <ul class="note" id="secrets-list" style="margin-top:8px;"></ul>
+          </div>
         </div>
       </div>
     </div>
@@ -127,63 +136,59 @@ const base = import.meta.env.BASE_URL;
   <script>
     import yaml from 'js-yaml';
     import { providerKeys, variantGroups, fieldsForRef, enumValues } from '../lib/schema.js';
+    import { ciIntegration } from '../lib/ci.js';
 
     const $ = (id) => document.getElementById(id);
-    const base = $('yaml-out').dataset.base || '/';
-    const SKIP = ['proxy_url']; // advanced, keep the form clean
+    const base = document.querySelector('.output-col').dataset.base || '/';
 
-    // UX-only suggestions (structure is 100% from schema; these just prefill blanks)
+    const SKIP = ['proxy_url'];
+    const SECRET_NAMES = new Set(['api_token', 'access_key', 'secret_key', 'session_token']);
+    const ALWAYS = new Set(['model', 'api_url']);
     const URL_PREFILL = {
       OPENAI: 'https://api.openai.com/v1', GEMINI: 'https://generativelanguage.googleapis.com',
       CLAUDE: 'https://api.anthropic.com', OLLAMA: 'http://localhost:11434',
       BEDROCK: 'https://bedrock-runtime.us-east-1.amazonaws.com', OPENROUTER: 'https://openrouter.ai/api/v1',
       AZURE_OPENAI: 'https://<resource>.openai.azure.com', OPENAI_COMPATIBLE: 'https://my-router.example.com/v1',
-      GITHUB: 'https://api.github.com', GITLAB: '${CI_SERVER_URL}', GITEA: 'https://gitea.example.com/api/v1',
-      AZURE_DEVOPS: 'https://dev.azure.com', BITBUCKET_CLOUD: 'https://api.bitbucket.org/2.0',
-      BITBUCKET_SERVER: 'https://bitbucket.example.com/rest/api/1.0',
     };
-    const TOKEN_PREFILL = {
-      access_key: 'AWS_ACCESS_KEY_ID', secret_key: 'AWS_SECRET_ACCESS_KEY',
-      'llm.api_token': 'LLM_API_TOKEN', 'vcs.api_token': 'GITLAB_API_TOKEN',
-    };
-    const ALWAYS = new Set(['model', 'api_url', 'api_token', 'access_key', 'secret_key']);
+    const SECRET_PREFILL = { api_token: 'LLM_API_TOKEN', access_key: 'AWS_ACCESS_KEY_ID', secret_key: 'AWS_SECRET_ACCESS_KEY', session_token: 'AWS_SESSION_TOKEN' };
 
     let schema = null;
 
-    function fieldRow(section, group, f) {
-      const id = `f-${section}-${group}-${f.name}`;
+    function isSecretField(f) { return f.kind === 'password' || SECRET_NAMES.has(f.name); }
+
+    function fieldRow(group, f) {
+      const id = `f-llm-${group}-${f.name}`;
+      const secret = isSecretField(f);
       const label = `${group}.${f.name}${f.required ? ' *' : ''}`;
-      let control;
+      if (secret) {
+        const val = SECRET_PREFILL[f.name] || 'API_TOKEN';
+        return `<div class="field"><label for="${id}">${label} <span class="hint">(secret → env)</span></label>
+          <input type="text" id="${id}" value="${val}" data-group="${group}" data-name="${f.name}" data-secret="1" />
+          <span class="hint">Env var name — set as a CI secret, not in the YAML.</span></div>`;
+      }
       if (f.kind === 'bool') {
         const checked = f.default === true ? 'checked' : '';
-        control = `<div class="checkbox-row"><input type="checkbox" id="${id}" ${checked}
-          data-section="${section}" data-group="${group}" data-name="${f.name}" data-kind="bool" data-default="${f.default}" />
-          <label for="${id}" style="margin:0;">${label}</label></div>`;
-        return `<div class="field">${control}</div>`;
+        return `<div class="field"><div class="checkbox-row"><input type="checkbox" id="${id}" ${checked}
+          data-group="${group}" data-name="${f.name}" data-kind="bool" data-default="${f.default}" />
+          <label for="${id}" style="margin:0;">${label}</label></div></div>`;
       }
       if (f.kind === 'enum') {
         const opts = f.options.map((o) => `<option value="${o}" ${o === f.default ? 'selected' : ''}>${o}</option>`).join('');
-        control = `<select id="${id}" data-section="${section}" data-group="${group}" data-name="${f.name}" data-kind="enum" data-default="${f.default}">${opts}</select>`;
-      } else {
-        const type = f.kind === 'number' ? 'number' : 'text';
-        let val = f.default ?? '';
-        if (f.name === 'api_url' && URL_PREFILL[currentProvider(section)]) val = URL_PREFILL[currentProvider(section)];
-        if (f.kind === 'password') val = TOKEN_PREFILL[f.name] || TOKEN_PREFILL[`${section}.${f.name}`] || 'API_TOKEN';
-        control = `<input type="${type}" id="${id}" value="${val}"
-          data-section="${section}" data-group="${group}" data-name="${f.name}" data-kind="${f.kind}" data-default="${f.default}" data-required="${f.required}" />`;
+        return `<div class="field"><label for="${id}">${label}</label>
+          <select id="${id}" data-group="${group}" data-name="${f.name}" data-kind="enum" data-default="${f.default}">${opts}</select></div>`;
       }
-      const hint = f.kind === 'password' ? '<span class="hint">Env var name — emitted wrapped in ${...}.</span>' : '';
-      return `<div class="field"><label for="${id}">${label}</label>${control}${hint}</div>`;
+      const type = f.kind === 'number' ? 'number' : 'text';
+      let val = f.default ?? '';
+      if (f.name === 'api_url' && URL_PREFILL[$('llm-provider').value]) val = URL_PREFILL[$('llm-provider').value];
+      return `<div class="field"><label for="${id}">${label}</label>
+        <input type="${type}" id="${id}" value="${val}" data-group="${group}" data-name="${f.name}" data-kind="${f.kind}" data-default="${f.default}" data-required="${f.required}" /></div>`;
     }
 
-    function currentProvider(section) { return $(`${section}-provider`).value; }
-
-    function renderGroups(section) {
-      const provider = currentProvider(section);
-      const container = $(`${section}-groups`);
-      const groups = variantGroups(schema, section, provider);
-      container.innerHTML = groups
-        .map((g) => fieldsForRef(schema, g.ref, { skip: SKIP }).map((f) => fieldRow(section, g.name, f)).join(''))
+    function renderLlmGroups() {
+      const provider = $('llm-provider').value;
+      const container = $('llm-groups');
+      container.innerHTML = variantGroups(schema, 'llm', provider)
+        .map((g) => fieldsForRef(schema, g.ref, { skip: SKIP }).map((f) => fieldRow(g.name, f)).join(''))
         .join('');
       container.querySelectorAll('input, select').forEach((el) => el.addEventListener('input', render));
     }
@@ -194,76 +199,83 @@ const base = import.meta.env.BASE_URL;
       const raw = el.value.trim();
       if (raw === '') return null;
       if (kind === 'number') return Number(raw);
-      if (kind === 'password') return '${' + raw + '}';
       return raw;
     }
 
-    function collectSection(section) {
-      const obj = { provider: currentProvider(section) };
-      $(`${section}-groups`).querySelectorAll('input, select').forEach((el) => {
-        const { group, name, kind } = el.dataset;
+    function collectLlm() {
+      const obj = { provider: $('llm-provider').value };
+      const secrets = [];
+      $('llm-groups').querySelectorAll('input, select').forEach((el) => {
+        const { group, name } = el.dataset;
+        if (el.dataset.secret === '1') {
+          const envName = el.value.trim();
+          if (envName) secrets.push({ name: envName, env: `LLM__${group.toUpperCase()}__${name.toUpperCase()}`, desc: `LLM ${name}` });
+          return; // never in YAML
+        }
         const value = coerce(el);
+        if (value === null) return;
         const def = el.dataset.default;
-        const isDefault = value !== null && String(value) === def;
-        const required = el.dataset.required === 'true' || kind === 'bool';
-        // keep it minimal: always-essential fields, required fields, or changed-from-default
-        const keep = ALWAYS.has(name) || required || (value !== null && !isDefault && !(kind === 'bool' && value === (def === 'true')));
-        if (value === null || !keep) return;
+        const required = el.dataset.required === 'true' || el.dataset.kind === 'bool';
+        const isDefault = String(value) === def;
+        if (!(ALWAYS.has(name) || required || !isDefault)) return;
         (obj[group] ??= {})[name] = value;
       });
-      return obj;
+      return { obj, secrets };
     }
 
     function render() {
       if (!schema) return;
+      const llm = collectLlm();
+
       const config = {
-        llm: collectSection('llm'),
-        vcs: collectSection('vcs'),
+        llm: llm.obj,
+        vcs: { provider: $('vcs-provider').value },
         review: { mode: $('review-mode').value, language: $('review-language').value || 'English' },
       };
       if ($('conv-enabled').checked) {
-        const type = $('conv-type').value;
-        let source;
-        if (type === 'local') {
-          source = { type: 'local', path: $('conv-path').value };
-        } else if (type === 'url') {
-          source = { type: 'url', url: $('conv-url-val').value };
-          const tok = $('conv-token').value.trim();
-          if (tok) source.token = '${' + tok + '}';
-        } else {
-          source = { type: 'git', repo: $('conv-repo').value, ref: $('conv-ref').value, path: $('conv-gitpath').value };
-          const tok = $('conv-token').value.trim();
-          if (tok) source.token = '${' + tok + '}';
-        }
-        config.conventions = { enabled: true, sources: [source] };
+        const t = $('conv-type').value;
+        let src;
+        if (t === 'local') src = { type: 'local', path: $('conv-path').value };
+        else if (t === 'url') src = { type: 'url', url: $('conv-url-val').value };
+        else src = { type: 'git', repo: $('conv-repo').value, ref: $('conv-ref').value, path: $('conv-gitpath').value };
+        config.conventions = { enabled: true, sources: [src] };
       }
-
       if ($('agent-enabled').checked) {
         config.agent = { enabled: true, max_iterations: Number($('agent-iter').value) || 25 };
       }
+
       const body = yaml.dump(config, { indent: 2, lineWidth: 100, quotingType: '"' });
       $('yaml-out').textContent =
-        '# .ai-review.yaml — generated by the ArgusReview config builder\n' +
-        '# Token env vars (${...}) must be provided as CI/CD secrets at runtime.\n\n' + body;
+        '# .ai-review.yaml — commit to your repo root.\n' +
+        '# Secrets (tokens) are NOT here — they go into CI as env vars (see below).\n\n' + body;
+
+      // --- CI panel ---
+      const ci = ciIntegration($('vcs-provider').value, llm.secrets);
+      $('ci-platform').textContent = ci.platform;
+      $('ci-file').textContent = `Add to: ${ci.filename}` + (ci.note ? `  •  ${ci.note}` : '');
+      let snippet = ci.snippet;
+      if ($('vcs-insecure').checked) {
+        snippet += '\n# self-hosted: also set  VCS__HTTP_CLIENT__VERIFY=false';
+      }
+      $('ci-out').textContent = snippet;
+
+      const secretsUl = $('secrets-list');
+      const uniq = [...new Map(ci.secrets.map((s) => [s.name, s])).values()];
+      secretsUl.innerHTML = uniq.length
+        ? uniq.map((s) => `<li><code>${s.name}</code> — ${s.desc || 'secret value'}</li>`).join('')
+        : '<li>None beyond the platform-provided token.</li>';
     }
 
     async function init() {
-      const res = await fetch(`${base}schema.json`);
-      schema = await res.json();
-
+      schema = await (await fetch(`${base}schema.json`)).json();
       for (const p of providerKeys(schema, 'llm')) $('llm-provider').add(new Option(p, p, p === 'OPENAI', p === 'OPENAI'));
       for (const p of providerKeys(schema, 'vcs')) $('vcs-provider').add(new Option(p, p, p === 'GITHUB', p === 'GITHUB'));
       for (const m of enumValues(schema, '#/$defs/ReviewMode')) $('review-mode').add(new Option(m, m));
 
-      $('llm-provider').addEventListener('change', () => { renderGroups('llm'); render(); });
-      $('vcs-provider').addEventListener('change', () => { renderGroups('vcs'); render(); });
-
-      const simpleInputs = [
-        'review-language', 'review-mode',
-        'conv-enabled', 'conv-type', 'conv-path', 'conv-url-val', 'conv-token', 'conv-repo', 'conv-ref', 'conv-gitpath',
-        'agent-enabled', 'agent-iter',
-      ];
-      simpleInputs.forEach((id) => $(id).addEventListener('input', render));
+      $('llm-provider').addEventListener('change', () => { renderLlmGroups(); render(); });
+      ['vcs-provider', 'vcs-insecure', 'review-language', 'review-mode',
+        'conv-enabled', 'conv-type', 'conv-path', 'conv-url-val', 'conv-repo', 'conv-ref', 'conv-gitpath',
+        'agent-enabled', 'agent-iter'].forEach((id) => $(id).addEventListener('input', render));
 
       function updateConvFields() {
         const t = $('conv-type').value;
@@ -275,16 +287,17 @@ const base = import.meta.env.BASE_URL;
       $('agent-enabled').addEventListener('change', () => { $('wrap-agent-iter').classList.toggle('hidden', !$('agent-enabled').checked); render(); });
       updateConvFields();
 
-      renderGroups('llm');
-      renderGroups('vcs');
+      renderLlmGroups();
       render();
     }
 
-    $('btn-copy').addEventListener('click', async () => {
-      await navigator.clipboard.writeText($('yaml-out').textContent || '');
-      $('btn-copy').textContent = 'Copied!';
-      setTimeout(() => ($('btn-copy').textContent = 'Copy'), 1500);
-    });
+    function copyEl(id, btn) {
+      navigator.clipboard.writeText($(id).textContent || '');
+      const t = btn.textContent; btn.textContent = 'Copied!';
+      setTimeout(() => (btn.textContent = t), 1500);
+    }
+    $('btn-copy').addEventListener('click', (e) => copyEl('yaml-out', e.target));
+    $('btn-copy-ci').addEventListener('click', (e) => copyEl('ci-out', e.target));
     $('btn-download').addEventListener('click', () => {
       const blob = new Blob([$('yaml-out').textContent || ''], { type: 'text/yaml' });
       const a = document.createElement('a');
