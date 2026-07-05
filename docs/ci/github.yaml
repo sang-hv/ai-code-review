@@ -7,8 +7,8 @@
 # It can be launched manually from the Actions tab, or configured to trigger
 # automatically for PR events (opened, updated, reopened).
 #
-# Docs: https://github.com/sang-hv/ai-code-review
-# Composite Action (this fork): sang-hv/ai-code-review@main
+# Docs: https://github.com/sang-hv/argus-code-review
+# Composite Action (this fork): sang-hv/argus-code-review@main
 # ===============================
 
 name: ArgusReview
@@ -54,7 +54,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run ArgusReview
-        uses: sang-hv/ai-code-review@main
+        uses: sang-hv/argus-code-review@main
         env:
           # ===============================
           # LLM provider & model

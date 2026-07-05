@@ -6,13 +6,13 @@
 
 AI-powered code review tool.
 
-> This is a personal fork ([sang-hv/ai-code-review](https://github.com/sang-hv/ai-code-review)) of ArgusReview
+> This is a personal fork ([sang-hv/argus-code-review](https://github.com/sang-hv/argus-code-review)) of ArgusReview
 > (originally [ai-review by Nikita Filonov](https://github.com/Nikita-Filonov/ai-review), rebranded by
 > [deha-project](https://github.com/deha-project/argus-review)). See [NOTICE](./NOTICE) for full attribution.
 
-[![CI](https://github.com/sang-hv/ai-code-review/actions/workflows/workflow-test.yml/badge.svg)](https://github.com/sang-hv/ai-code-review/actions/workflows/workflow-test.yml)
+[![CI](https://github.com/sang-hv/argus-code-review/actions/workflows/workflow-test.yml/badge.svg)](https://github.com/sang-hv/argus-code-review/actions/workflows/workflow-test.yml)
 [![PyPI version](https://img.shields.io/pypi/v/argus-review-code.svg)](https://pypi.org/project/argus-review-code/)
-[![License](https://img.shields.io/github/license/sang-hv/ai-code-review)](./LICENSE)
+[![License](https://img.shields.io/github/license/sang-hv/argus-code-review)](./LICENSE)
 
 ---
 
@@ -96,8 +96,8 @@ pip install argus-review-code
 Or install from source:
 
 ```bash
-git clone https://github.com/sang-hv/ai-code-review.git
-cd ai-code-review
+git clone https://github.com/sang-hv/argus-code-review.git
+cd argus-code-review
 pip install .
 ```
 
@@ -295,7 +295,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: sang-hv/ai-code-review@main
+      - uses: sang-hv/argus-code-review@main
         with:
           review-command: ${{ inputs.review-command }}
         env:
@@ -388,7 +388,7 @@ inside your infrastructure.
 
 🧠 **ArgusReview** — open-source AI-powered code reviewer
 
-- 📂 [Source (this fork)](https://github.com/sang-hv/ai-code-review)
+- 📂 [Source (this fork)](https://github.com/sang-hv/argus-code-review)
 - 📦 [PyPI](https://pypi.org/project/argus-review-code/)
 - 📜 [NOTICE — attribution & fork history](./NOTICE)
 # test change for review

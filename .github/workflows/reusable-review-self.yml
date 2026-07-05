@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       # Dogfooding: this uses the same composite action.yml that any other
-      # project would consume via `uses: sang-hv/ai-code-review@main`. Only
+      # project would consume via `uses: sang-hv/argus-code-review@main`. Only
       # the LLM/VCS env vars below are specific to this repo's CI — nothing
       # is hardcoded inside the action itself.
       - name: Run ArgusReview

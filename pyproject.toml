@@ -57,9 +57,9 @@ dependencies = [
 requires-python = ">=3.11"
 
 [project.urls]
-Issues = "https://github.com/sang-hv/ai-code-review/issues"
-Homepage = "https://github.com/sang-hv/ai-code-review"
-Repository = "https://github.com/sang-hv/ai-code-review"
+Issues = "https://github.com/sang-hv/argus-code-review/issues"
+Homepage = "https://github.com/sang-hv/argus-code-review"
+Repository = "https://github.com/sang-hv/argus-code-review"
 
 [project.scripts]
 argus-review = "argus_review.cli.main:app"
