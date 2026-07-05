@@ -1,9 +1,10 @@
 import { defineConfig } from 'astro/config';
 
-// NOTE: `site` and `base` are set for GitHub Pages project-page hosting
-// (https://sang-hv.github.io/argus-code-review). Adjust or remove `base` if you
-// deploy to a custom domain or the repo root.
+// `base` defaults to '/' which suits an S3 bucket / CloudFront served at the
+// root. For hosting under a sub-path (e.g. GitHub Pages project page), set
+// PUBLIC_BASE_PATH, e.g. PUBLIC_BASE_PATH=/argus-code-review pnpm build.
+const base = process.env.PUBLIC_BASE_PATH || '/';
+
 export default defineConfig({
-  site: 'https://sang-hv.github.io',
-  base: '/argus-code-review',
+  base,
 });

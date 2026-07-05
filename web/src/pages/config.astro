@@ -53,9 +53,55 @@ const base = import.meta.env.BASE_URL;
                 <label for="conv-enabled" style="margin:0;">Load project coding conventions</label>
               </div>
             </div>
-            <div class="field hidden" id="wrap-conv-path">
-              <label for="conv-path">Local path (file or folder of .md)</label>
-              <input id="conv-path" type="text" value="./AGENTS.md" />
+            <div id="conv-body" class="hidden">
+              <div class="field">
+                <label for="conv-type">Source type</label>
+                <select id="conv-type">
+                  <option value="local" selected>local (file or folder)</option>
+                  <option value="url">url (raw .md)</option>
+                  <option value="git">git repo</option>
+                </select>
+              </div>
+              <div class="field conv-local">
+                <label for="conv-path">Local path</label>
+                <input id="conv-path" type="text" value="./AGENTS.md" />
+                <span class="hint">A .md file or a folder of .md files in your repo.</span>
+              </div>
+              <div class="field conv-url hidden">
+                <label for="conv-url-val">Raw .md URL</label>
+                <input id="conv-url-val" type="text" value="https://raw.githubusercontent.com/org/standards/main/STYLE.md" />
+              </div>
+              <div class="field conv-url conv-git hidden">
+                <label for="conv-token">Token env var (private only, optional)</label>
+                <input id="conv-token" type="text" value="" placeholder="e.g. CONVENTIONS_TOKEN" />
+              </div>
+              <div class="field conv-git hidden">
+                <label for="conv-repo">Git repo URL</label>
+                <input id="conv-repo" type="text" value="https://github.com/org/standards.git" />
+              </div>
+              <div class="field conv-git hidden">
+                <label for="conv-ref">Ref (branch/tag)</label>
+                <input id="conv-ref" type="text" value="main" />
+              </div>
+              <div class="field conv-git hidden">
+                <label for="conv-gitpath">Path within repo</label>
+                <input id="conv-gitpath" type="text" value="." />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend>Agent mode (optional)</legend>
+            <div class="field">
+              <div class="checkbox-row">
+                <input id="agent-enabled" type="checkbox" />
+                <label for="agent-enabled" style="margin:0;">Let the model explore the repo before reviewing</label>
+              </div>
+              <span class="hint">Iterative ReAct loop (ls/cat/rg/git). Works best with stronger models.</span>
+            </div>
+            <div class="field hidden" id="wrap-agent-iter">
+              <label for="agent-iter">Max iterations</label>
+              <input id="agent-iter" type="number" value="25" />
             </div>
           </fieldset>
         </div>
@@ -176,7 +222,24 @@ const base = import.meta.env.BASE_URL;
         review: { mode: $('review-mode').value, language: $('review-language').value || 'English' },
       };
       if ($('conv-enabled').checked) {
-        config.conventions = { enabled: true, sources: [{ type: 'local', path: $('conv-path').value }] };
+        const type = $('conv-type').value;
+        let source;
+        if (type === 'local') {
+          source = { type: 'local', path: $('conv-path').value };
+        } else if (type === 'url') {
+          source = { type: 'url', url: $('conv-url-val').value };
+          const tok = $('conv-token').value.trim();
+          if (tok) source.token = '${' + tok + '}';
+        } else {
+          source = { type: 'git', repo: $('conv-repo').value, ref: $('conv-ref').value, path: $('conv-gitpath').value };
+          const tok = $('conv-token').value.trim();
+          if (tok) source.token = '${' + tok + '}';
+        }
+        config.conventions = { enabled: true, sources: [source] };
+      }
+
+      if ($('agent-enabled').checked) {
+        config.agent = { enabled: true, max_iterations: Number($('agent-iter').value) || 25 };
       }
       const body = yaml.dump(config, { indent: 2, lineWidth: 100, quotingType: '"' });
       $('yaml-out').textContent =
@@ -194,8 +257,23 @@ const base = import.meta.env.BASE_URL;
 
       $('llm-provider').addEventListener('change', () => { renderGroups('llm'); render(); });
       $('vcs-provider').addEventListener('change', () => { renderGroups('vcs'); render(); });
-      ['review-language', 'review-mode', 'conv-enabled', 'conv-path'].forEach((id) => $(id).addEventListener('input', render));
-      $('conv-enabled').addEventListener('change', () => { $('wrap-conv-path').classList.toggle('hidden', !$('conv-enabled').checked); render(); });
+
+      const simpleInputs = [
+        'review-language', 'review-mode',
+        'conv-enabled', 'conv-type', 'conv-path', 'conv-url-val', 'conv-token', 'conv-repo', 'conv-ref', 'conv-gitpath',
+        'agent-enabled', 'agent-iter',
+      ];
+      simpleInputs.forEach((id) => $(id).addEventListener('input', render));
+
+      function updateConvFields() {
+        const t = $('conv-type').value;
+        document.querySelectorAll('.conv-local, .conv-url, .conv-git').forEach((el) => el.classList.add('hidden'));
+        document.querySelectorAll('.conv-' + t).forEach((el) => el.classList.remove('hidden'));
+      }
+      $('conv-enabled').addEventListener('change', () => { $('conv-body').classList.toggle('hidden', !$('conv-enabled').checked); render(); });
+      $('conv-type').addEventListener('change', updateConvFields);
+      $('agent-enabled').addEventListener('change', () => { $('wrap-agent-iter').classList.toggle('hidden', !$('agent-enabled').checked); render(); });
+      updateConvFields();
 
       renderGroups('llm');
       renderGroups('vcs');
