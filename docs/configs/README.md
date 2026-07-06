@@ -105,6 +105,46 @@ is shared across all providers via `vcs.pagination.per_page` (default `100`) and
 
 ---
 
+## 🤖 Agent mode (`agent.*`)
+
+Two different things use the agent loop:
+
+- `agent.enabled: true` turns `run` / `run-inline` / `run-summary` / `run-context`
+  into a ReAct loop (the model may call read-only shell tools before answering).
+- `run-agent` / `run-agent-inline` / `run-agent-summary` **always** run the agent
+  loop with a lightweight, metadata-only prompt, regardless of `agent.enabled`.
+  This is the low-quota flow — see
+  [docs/agent-review-quota-proposal.md](../agent-review-quota-proposal.md).
+
+| Field                        | Default | Meaning                                                                                   |
+|-------------------------------|---------|---------------------------------------------------------------------------------------------|
+| `enabled`                     | `false` | Turns agent mode on for `run`/`run-inline`/`run-summary`/`run-context`.                    |
+| `max_iterations`               | `25`    | Hard cap on ReAct steps (tool call + LLM response) before forcing a final answer.          |
+| `command_timeout`              | `10`    | Max seconds a single shell command may run before being killed.                            |
+| `max_total_context_chars`       | `40000` | Running total of tool-output characters per session; once exceeded, forces a final answer. |
+| `max_command_output_chars`      | `40000` | Truncates a single command's output before it's added to context.                          |
+| `max_history_chars`            | `24000` | Caps re-sent tool-output history per step (older steps get elided) to bound token cost.    |
+| `max_total_tokens`             | `100000` | Hard budget on real prompt+completion tokens across the whole loop. This is the most direct quota guardrail — the char-based limits above only approximate it. `0` disables the check (useful if your provider doesn't report usage). |
+| `allow_commands`               | see code | Regex allow-list of shell commands the agent may run (`ls`, `cat`, `rg`, `grep`, `head`, `tail`, `wc`, `sed -n ...p`, `git status/show/diff/log/rev-parse/ls-files`). Read-only by design. |
+
+---
+
+## 📐 Coding conventions (`conventions.*`)
+
+Point `conventions.sources` at local `.md` docs, a raw URL, or a git repo. They
+get combined into a single section appended to prompts for the enabled modes
+(`conventions.modes.*`, all `true` by default: `inline`, `context`, `summary`,
+`inline_reply`, `summary_reply`, `combined`).
+
+For the agent-light flow (`run-agent*`), conventions are **not** appended in
+full — they are materialized to disk under `conventions.cache_dir`
+(default `.argus-review/cache/conventions`) and the agent only receives a
+listing (path + line count), inspecting relevant sections itself with
+`rg`/`sed -n`/`cat`. This keeps large convention docs (e.g. thousands of lines)
+from being sent on every call.
+
+---
+
 ## 📘 Examples
 
 - [.ai-review.yaml](./.ai-review.yaml) — main YAML config with comments

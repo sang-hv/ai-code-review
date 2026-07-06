@@ -13,11 +13,13 @@ from argus_review.services.review.gateway.review_agent_llm_gateway import Review
 from argus_review.services.review.gateway.review_comment_gateway import ReviewCommentGateway
 from argus_review.services.review.gateway.review_direct_llm_gateway import ReviewDirectLLMGateway
 from argus_review.services.review.gateway.review_dry_run_comment_gateway import ReviewDryRunCommentGateway
+from argus_review.services.review.internal.agent_combined.service import AgentCombinedResultService
 from argus_review.services.review.internal.inline.service import InlineCommentService
 from argus_review.services.review.internal.inline_reply.service import InlineCommentReplyService
 from argus_review.services.review.internal.summary.service import SummaryCommentService
 from argus_review.services.review.internal.summary_reply.service import SummaryCommentReplyService
 from argus_review.services.review.runner.context import ContextReviewRunner
+from argus_review.services.review.runner.agent_combined import AgentReviewRunner
 from argus_review.services.review.runner.agent_inline import AgentInlineReviewRunner
 from argus_review.services.review.runner.agent_summary import AgentSummaryReviewRunner
 from argus_review.services.review.runner.inline import InlineReviewRunner
@@ -43,6 +45,7 @@ class ReviewService:
         self.summary_comment = SummaryCommentService()
         self.inline_comment_reply = InlineCommentReplyService()
         self.summary_comment_reply = SummaryCommentReplyService()
+        self.agent_combined_result = AgentCombinedResultService()
 
         self.agent_tool = AgentToolService(policy=self.policy)
         self.agent_loop = AgentLoopService(
@@ -154,6 +157,20 @@ class ReviewService:
             review_agent_llm_gateway=self.review_agent_llm_gateway,
             review_comment_gateway=self.review_comment_gateway
         )
+        # `run-agent` uses a single combined session (summary + inline in one
+        # FINAL response) instead of chaining the two standalone runners above,
+        # so the agent only explores the diff/conventions once per review.
+        self.agent_review_runner = AgentReviewRunner(
+            vcs=self.vcs,
+            git=self.git,
+            diff=self.diff,
+            cost=self.cost,
+            prompt=self.prompt,
+            policy=self.policy,
+            agent_combined_result=self.agent_combined_result,
+            review_agent_llm_gateway=self.review_agent_llm_gateway,
+            review_comment_gateway=self.review_comment_gateway
+        )
 
     async def run_inline_review(self) -> None:
         await self.inline_review_runner.run()
@@ -175,6 +192,9 @@ class ReviewService:
 
     async def run_agent_summary_review(self) -> None:
         await self.agent_summary_review_runner.run()
+
+    async def run_agent_review(self) -> None:
+        await self.agent_review_runner.run()
 
     async def run_clear_inline_review(self) -> None:
         await self.review_comment_gateway.clear_inline_comments()

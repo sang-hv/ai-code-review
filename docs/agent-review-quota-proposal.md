@@ -1,12 +1,12 @@
 # Agent Review Quota Proposal
 
-> **Status: Phase 1 + tradeoff mitigations implemented.**
+> **Status: Phase 1 + tradeoff mitigations + follow-up optimizations implemented.**
 >
 > The agent-light flow described below ships as three new commands
-> (`run-agent`, `run-agent-inline`, `run-agent-summary`) that run a single agent
-> session with a lightweight, metadata-only prompt. Existing commands are
-> unchanged. The known trade-offs were addressed up front rather than deferred —
-> see **Implemented Behavior** below.
+> (`run-agent`, `run-agent-inline`, `run-agent-summary`) that run a lightweight,
+> metadata-only prompt. Existing commands are unchanged. The known trade-offs
+> were addressed up front rather than deferred — see **Implemented Behavior**
+> below.
 
 ## Implemented Behavior
 
@@ -15,7 +15,7 @@
 ```bash
 argus-review run-agent-summary   # one agent session -> one summary comment
 argus-review run-agent-inline    # one agent session -> inline comments (single call, not per-file)
-argus-review run-agent           # agent inline + agent summary
+argus-review run-agent           # ONE agent session -> summary + inline together
 ```
 
 All three always drive the agent gateway regardless of `agent.enabled`, feeding
@@ -24,6 +24,12 @@ list, and a convention *inventory* — never the full diff or full convention te
 The agent pulls in what it needs through read-only tools and returns a final
 answer that flows through the existing inline/summary parsers and comment
 gateways.
+
+`run-agent` is a **single combined agent session**: the FINAL response is one
+JSON object (`{"summary": ..., "comments": [...]}`), so the agent explores the
+diff/conventions once and produces both outputs, instead of chaining the two
+standalone `run-agent-inline` + `run-agent-summary` sessions (which would
+explore twice and roughly double the quota cost of `run-agent`).
 
 ### Trade-off mitigations (shipped)
 
@@ -46,6 +52,16 @@ gateways.
    allow-list now also permits `head`, `tail`, `wc`, and the read-only
    `sed -n ...p` print form (the in-place `-i` edit flag stays blocked). `wc -l`
    lets the agent cheaply check whole-file rules such as "max 300 lines per file".
+5. **`run-agent` doubled the exploration cost** — `run-agent` now runs a single
+   `AgentReviewRunner` session instead of chaining the standalone inline +
+   summary agent runners. One `ask()` call, one diff/convention exploration,
+   one FINAL response containing both outputs.
+6. **Guardrails tracked chars, not the token quota they were meant to protect** —
+   `agent.max_total_tokens` (default `100000`, `0` disables it) bounds real
+   prompt+completion token usage across the whole agent loop, forcing FINAL
+   once the budget is hit. This complements `max_total_context_chars`
+   (tool-output volume) and `max_iterations` (step count) with a check on the
+   metric that actually maps to provider-billed quota.
 
 ### Configuration
 
@@ -53,6 +69,9 @@ gateways.
 agent:
   # Bounds re-sent tool-output history per iteration (tradeoff #2).
   max_history_chars: 24000
+  # Hard budget on real prompt+completion tokens across the whole agent loop.
+  # Default 100000 is a safety net; lower it for tighter quotas. 0 disables it.
+  max_total_tokens: 100000
 
 conventions:
   enabled: true
@@ -82,6 +101,8 @@ AGENT__MAX_ITERATIONS: "8"
 AGENT__MAX_HISTORY_CHARS: "24000"
 AGENT__MAX_COMMAND_OUTPUT_CHARS: "12000"
 AGENT__MAX_TOTAL_CONTEXT_CHARS: "50000"
+# Tighter than the 100000 default — forces FINAL sooner on very low quotas.
+AGENT__MAX_TOTAL_TOKENS: "30000"
 # Keep MAX_TOKENS high enough that the final inline JSON is not truncated.
 LLM__META__MAX_TOKENS: "4000"
 ```

@@ -37,10 +37,22 @@ class PromptServiceProtocol(Protocol):
     ) -> str:
         ...
 
+    def build_agent_light_combined_request(
+            self,
+            context: PromptContextSchema,
+            base_sha: str,
+            head_sha: str,
+            conventions_inventory: str = "",
+    ) -> str:
+        ...
+
     def build_system_agent_light_inline_request(self) -> str:
         ...
 
     def build_system_agent_light_summary_request(self) -> str:
+        ...
+
+    def build_system_agent_light_combined_request(self) -> str:
         ...
 
     def build_inline_request(self, diff: DiffFileSchema, context: PromptContextSchema) -> str:

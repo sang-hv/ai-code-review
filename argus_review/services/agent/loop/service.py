@@ -27,16 +27,20 @@ class AgentLoopService(AgentLoopServiceProtocol):
         self.agent_tool = agent_tool
         self.max_iterations = settings.agent.max_iterations
         self.max_context_chars = settings.agent.max_total_context_chars
+        # 0 disables the token budget check (not every provider reports usage).
+        self.max_total_tokens = settings.agent.max_total_tokens
 
         self.parser = LLMOutputJSONParser(AgentStepSchema)
         self.traces: list[AgentTraceSchema] = []
         self.signatures: set[str] = set()
         self.context_used = 0
+        self.tokens_used = 0
 
     def clear(self):
         self.traces = []
         self.signatures = set()
         self.context_used = 0
+        self.tokens_used = 0
         logger.debug("Agent loop state cleared")
 
     async def run_step(self, step: AgentStepSchema, chat: ChatResultSchema, iteration: int) -> AgentTraceSchema:
@@ -124,7 +128,8 @@ class AgentLoopService(AgentLoopServiceProtocol):
     async def run(self, prompt: str, prompt_system: str) -> AgentLoopResultSchema:
         self.clear()
         logger.info(
-            f"Starting agent loop: max_iterations={self.max_iterations}, max_context_chars={self.max_context_chars}"
+            f"Starting agent loop: max_iterations={self.max_iterations}, "
+            f"max_context_chars={self.max_context_chars}, max_total_tokens={self.max_total_tokens or 'disabled'}"
         )
 
         for iteration in range(1, self.max_iterations + 1):
@@ -197,12 +202,17 @@ class AgentLoopService(AgentLoopServiceProtocol):
             self.traces.append(trace)
 
             self.context_used += len(trace.tool_output or "")
+            self.tokens_used += trace.total_tokens or 0
             logger.debug(
                 f"Agent loop context usage after iteration {iteration}: "
-                f"{self.context_used}/{self.max_context_chars}"
+                f"{self.context_used}/{self.max_context_chars} chars, "
+                f"{self.tokens_used}/{self.max_total_tokens or '∞'} tokens"
             )
             if self.context_used >= self.max_context_chars:
                 logger.info("Agent context limit reached, forcing final response")
+                break
+            if self.max_total_tokens and self.tokens_used >= self.max_total_tokens:
+                logger.info("Agent token budget reached, forcing final response")
                 break
 
         logger.info("Agent loop finished regular iterations without FINAL action; switching to force-final flow")

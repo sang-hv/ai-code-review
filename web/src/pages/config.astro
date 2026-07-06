@@ -42,11 +42,25 @@ const base = import.meta.env.BASE_URL;
           <fieldset class="fieldset">
             <legend>Review</legend>
             <div class="field">
+              <label for="review-command">CI command to run</label>
+              <select id="review-command"></select>
+              <span class="hint">
+                Which <code>argus-review</code> command the CI job/action executes.<br />
+                • <strong>run</strong> — full pipeline: inline comments (one LLM call per file) + one summary comment. Highest quality, highest quota.<br />
+                • <strong>run-inline</strong> / <strong>run-summary</strong> / <strong>run-context</strong> — one piece of the pipeline on its own (context = one call across all files, inline comments).<br />
+                • <strong>run-agent</strong> — low-quota ReAct flow: <em>one</em> agent session explores the diff/conventions via read-only shell tools, then returns both the summary and inline comments together. Cheapest way to get both.<br />
+                • <strong>run-agent-inline</strong> / <strong>run-agent-summary</strong> — same low-quota agent flow, but only inline or only the summary.<br />
+                • <strong>run-inline-reply</strong> / <strong>run-summary-reply</strong> — AI replies to existing review threads (usually a separate manual trigger).<br />
+                • <strong>clear-inline</strong> / <strong>clear-summary</strong> — remove previously posted AI comments.<br />
+                The <code>run-agent*</code> commands always drive the agent loop regardless of the "Agent mode" toggle below — that toggle only affects <strong>run</strong>/<strong>run-inline</strong>/<strong>run-summary</strong>/<strong>run-context</strong>.
+              </span>
+            </div>
+            <div class="field">
               <label for="review-language">Response language</label>
               <input id="review-language" type="text" value="English" />
               <span class="hint">Free-form: English, Vietnamese, 日本語, ...</span>
             </div>
-            <div class="field">
+            <div class="field" id="wrap-review-mode">
               <label for="review-mode">Mode</label>
               <select id="review-mode"></select>
               <span class="hint">
@@ -55,9 +69,13 @@ const base = import.meta.env.BASE_URL;
                 • <strong>FULL_FILE_DIFF</strong> — full unified diff of changed files (more context, more tokens).<br />
                 • <strong>FULL_FILE_CURRENT / FULL_FILE_PREVIOUS</strong> — the whole file after / before changes. Needed for whole-file rules (e.g. "max 300 lines per file"); highest token cost.<br />
                 • <strong>ONLY_ADDED / ONLY_REMOVED / ADDED_AND_REMOVED</strong> — leanest, changed lines only.<br />
-                Tip: for whole-file conventions, use FULL_FILE_CURRENT, or enable Agent mode so the model can read files on demand without loading every file in full.
+                Tip: for whole-file conventions, use FULL_FILE_CURRENT, or use <strong>run-agent</strong> so the model can read files on demand without loading every file in full.
               </span>
             </div>
+            <p class="hint hidden" id="review-mode-agent-note">
+              <code>review.mode</code> is hidden because <code>run-agent*</code> commands ignore it — they only
+              send metadata; the agent pulls diffs in on demand via read-only shell tools.
+            </p>
           </fieldset>
 
           <fieldset class="fieldset">
@@ -102,21 +120,59 @@ const base = import.meta.env.BASE_URL;
 
           <fieldset class="fieldset">
             <legend>Agent mode (optional)</legend>
-            <div class="field">
+            <div class="field" id="wrap-agent-enabled">
               <div class="checkbox-row">
                 <input id="agent-enabled" type="checkbox" />
-                <label for="agent-enabled" style="margin:0;">Enable agent mode — let the model explore the repo before reviewing</label>
+                <label for="agent-enabled" style="margin:0;">Enable agent mode for run / run-inline / run-summary / run-context</label>
               </div>
-              <span class="hint">Also powers the low-quota <code>run-agent</code> / <code>run-agent-inline</code> / <code>run-agent-summary</code> commands.</span>
+              <span class="hint">
+                Turns those commands into a ReAct loop: instead of one direct LLM call per file, the
+                model can run read-only shell commands (<code>ls</code>, <code>cat</code>, <code>rg</code>,
+                <code>git diff</code>, <code>sed -n</code>, ...) to explore the repo before answering.
+                Usually more expensive than the plain commands, since it may still receive the full diff/conventions
+                up front and then re-sends tool history each step.
+              </span>
             </div>
+            <p class="hint hidden" id="agent-enabled-hidden-note">
+              Hidden — <code>run-agent*</code> commands always run the agent loop regardless of this flag
+              (it only affects <strong>run</strong>/<strong>run-inline</strong>/<strong>run-summary</strong>/<strong>run-context</strong>).
+              The tuning fields below still apply.
+            </p>
             <div class="field hidden" id="wrap-agent-iter">
               <label for="agent-iter">Max iterations</label>
-              <input id="agent-iter" type="number" value="25" />
+              <input id="agent-iter" type="number" value="25" min="1" max="100" />
+              <span class="hint">Hard cap on ReAct steps (tool call + LLM response) before forcing a final answer. Default 25.</span>
+            </div>
+            <div class="field hidden" id="wrap-agent-timeout">
+              <label for="agent-timeout">Command timeout (seconds)</label>
+              <input id="agent-timeout" type="number" value="10" min="1" max="120" />
+              <span class="hint">Max time a single shell command (e.g. <code>rg</code>, <code>cat</code>) may run before being killed. Default 10.</span>
+            </div>
+            <div class="field hidden" id="wrap-agent-tokens">
+              <label for="agent-tokens">Max total tokens (0 = disabled)</label>
+              <input id="agent-tokens" type="number" value="100000" min="0" max="10000000" />
+              <span class="hint">
+                Hard budget on real prompt+completion tokens (as reported by your provider) across the whole
+                agent loop — once hit, the loop is forced to a final answer. This is the most direct quota
+                guardrail; the char-based limits below only approximate it, and auto-scale with this value.
+                Default <code>100000</code> is a safety net that rarely triggers; lower it for tighter quotas.
+                <code>0</code> disables the check entirely (useful if your provider doesn't report usage).
+              </span>
+            </div>
+            <div class="field hidden" id="wrap-agent-context">
+              <label for="agent-context">Max total context chars</label>
+              <input id="agent-context" type="number" value="40000" min="1000" max="500000" />
+              <span class="hint">Running total of tool-output characters across the whole session; once exceeded, the loop is forced to a final answer. Auto-scales with max total tokens above (~0.4 chars/token) unless you edit it directly.</span>
+            </div>
+            <div class="field hidden" id="wrap-agent-output">
+              <label for="agent-output">Max command output chars</label>
+              <input id="agent-output" type="number" value="40000" min="1000" max="500000" />
+              <span class="hint">Truncates a single command's output (e.g. a huge <code>cat</code>) before it's added to context. Auto-scales with max total tokens above unless you edit it directly.</span>
             </div>
             <div class="field hidden" id="wrap-agent-history">
               <label for="agent-history">Max history chars</label>
-              <input id="agent-history" type="number" value="24000" />
-              <span class="hint">Caps re-sent tool-output history per step to keep quota bounded.</span>
+              <input id="agent-history" type="number" value="24000" min="1000" max="500000" />
+              <span class="hint">Caps re-sent tool-output history per step — older steps get elided so per-iteration token cost stays bounded. Auto-scales with max total tokens above unless you edit it directly.</span>
             </div>
           </fieldset>
         </div>
@@ -150,7 +206,7 @@ const base = import.meta.env.BASE_URL;
   <script>
     import yaml from 'js-yaml';
     import { providerKeys, variantGroups, fieldsForRef, enumValues } from '../lib/schema.js';
-    import { ciIntegration } from '../lib/ci.js';
+    import { ciIntegration, REVIEW_COMMANDS } from '../lib/ci.js';
 
     const $ = (id) => document.getElementById(id);
     const base = document.querySelector('.output-col').dataset.base || '/';
@@ -241,10 +297,19 @@ const base = import.meta.env.BASE_URL;
       if (!schema) return;
       const llm = collectLlm();
 
+      const reviewCommand = $('review-command').value || 'run';
+      const isAgentLightCommand = reviewCommand.startsWith('run-agent');
+
+      const review = { language: $('review-language').value || 'English' };
+      // run-agent* commands never look at review.mode — they send only
+      // metadata and let the agent pull diffs in on demand — so omit it
+      // entirely instead of writing a field that would just be ignored.
+      if (!isAgentLightCommand) review.mode = $('review-mode').value;
+
       const config = {
         llm: llm.obj,
         vcs: { provider: $('vcs-provider').value },
-        review: { mode: $('review-mode').value, language: $('review-language').value || 'English' },
+        review,
       };
       if ($('conv-enabled').checked) {
         const t = $('conv-type').value;
@@ -254,12 +319,32 @@ const base = import.meta.env.BASE_URL;
         else src = { type: 'git', repo: $('conv-repo').value, ref: $('conv-ref').value, path: $('conv-gitpath').value };
         config.conventions = { enabled: true, sources: [src] };
       }
-      if ($('agent-enabled').checked) {
-        config.agent = {
-          enabled: true,
-          max_iterations: Number($('agent-iter').value) || 25,
-          max_history_chars: Number($('agent-history').value) || 24000,
-        };
+      if ($('agent-enabled').checked || isAgentLightCommand) {
+        config.agent = {};
+        // The checkbox only means something for run/run-inline/run-summary/
+        // run-context. run-agent* always drives the agent loop regardless —
+        // so its (possibly stale) checked state is never written out for them.
+        if (!isAgentLightCommand && $('agent-enabled').checked) config.agent.enabled = true;
+
+        const iter = Number($('agent-iter').value);
+        if (iter && iter !== 25) config.agent.max_iterations = iter;
+
+        const timeout = Number($('agent-timeout').value);
+        if (timeout && timeout !== 10) config.agent.command_timeout = timeout;
+
+        const totalTokens = Number($('agent-tokens').value);
+        if (totalTokens !== 100000) config.agent.max_total_tokens = totalTokens;
+
+        const contextChars = Number($('agent-context').value);
+        if (contextChars && contextChars !== 40000) config.agent.max_total_context_chars = contextChars;
+
+        const outputChars = Number($('agent-output').value);
+        if (outputChars && outputChars !== 40000) config.agent.max_command_output_chars = outputChars;
+
+        const historyChars = Number($('agent-history').value);
+        if (historyChars && historyChars !== 24000) config.agent.max_history_chars = historyChars;
+
+        if (Object.keys(config.agent).length === 0) delete config.agent;
       }
 
       const body = yaml.dump(config, { indent: 2, lineWidth: 100, quotingType: '"' });
@@ -268,7 +353,7 @@ const base = import.meta.env.BASE_URL;
         '# Secrets (tokens) are NOT here — they go into CI as env vars (see below).\n\n' + body;
 
       // --- CI panel ---
-      const ci = ciIntegration($('vcs-provider').value, llm.secrets);
+      const ci = ciIntegration($('vcs-provider').value, llm.secrets, reviewCommand);
       $('ci-platform').textContent = ci.platform;
       $('ci-file').textContent = `Add to: ${ci.filename}` + (ci.note ? `  •  ${ci.note}` : '');
       let snippet = ci.snippet;
@@ -289,26 +374,62 @@ const base = import.meta.env.BASE_URL;
       for (const p of providerKeys(schema, 'llm')) $('llm-provider').add(new Option(p, p, p === 'OPENAI', p === 'OPENAI'));
       for (const p of providerKeys(schema, 'vcs')) $('vcs-provider').add(new Option(p, p, p === 'GITHUB', p === 'GITHUB'));
       for (const m of enumValues(schema, '#/$defs/ReviewMode')) $('review-mode').add(new Option(m, m));
+      const DEFAULT_COMMAND = 'run-agent';
+      for (const c of REVIEW_COMMANDS) $('review-command').add(new Option(c, c, c === DEFAULT_COMMAND, c === DEFAULT_COMMAND));
 
       $('llm-provider').addEventListener('change', () => { renderLlmGroups(); render(); });
-      ['vcs-provider', 'vcs-insecure', 'review-language', 'review-mode',
+      ['vcs-provider', 'vcs-insecure', 'review-command', 'review-language', 'review-mode',
         'conv-enabled', 'conv-type', 'conv-path', 'conv-url-val', 'conv-repo', 'conv-ref', 'conv-gitpath',
-        'agent-enabled', 'agent-iter', 'agent-history'].forEach((id) => $(id).addEventListener('input', render));
+        'agent-enabled', 'agent-iter', 'agent-timeout'].forEach((id) => $(id).addEventListener('input', render));
+
+      // The three char-based limits auto-scale with "Max total tokens" (using
+      // a rough chars/token ratio matching their defaults: 100000 tokens ->
+      // 40000/40000/24000 chars) so a single knob stays meaningful. Editing a
+      // char field directly opts it out of auto-scaling from then on.
+      const AGENT_CHAR_RATIOS = { 'agent-context': 0.4, 'agent-output': 0.4, 'agent-history': 0.24 };
+      const touchedAgentCharFields = new Set();
+
+      function scaleAgentCharFields() {
+        const tokens = Number($('agent-tokens').value) || 0;
+        for (const [id, ratio] of Object.entries(AGENT_CHAR_RATIOS)) {
+          if (touchedAgentCharFields.has(id)) continue;
+          $(id).value = Math.min(500000, Math.max(1000, Math.round(tokens * ratio) || 1000));
+        }
+      }
+
+      $('agent-tokens').addEventListener('input', () => { scaleAgentCharFields(); render(); });
+      Object.keys(AGENT_CHAR_RATIOS).forEach((id) => {
+        $(id).addEventListener('input', () => { touchedAgentCharFields.add(id); render(); });
+      });
 
       function updateConvFields() {
         const t = $('conv-type').value;
         document.querySelectorAll('.conv-local, .conv-url, .conv-git').forEach((el) => el.classList.add('hidden'));
         document.querySelectorAll('.conv-' + t).forEach((el) => el.classList.remove('hidden'));
       }
+      function updateAgentFields() {
+        const isAgentLight = $('review-command').value.startsWith('run-agent');
+        const on = $('agent-enabled').checked || isAgentLight;
+        ['wrap-agent-iter', 'wrap-agent-timeout', 'wrap-agent-context', 'wrap-agent-output', 'wrap-agent-history', 'wrap-agent-tokens']
+          .forEach((id) => $(id).classList.toggle('hidden', !on));
+        // run-agent* always drives the agent loop, so the checkbox choosing
+        // to enable it for run/run-inline/run-summary/run-context is moot.
+        $('wrap-agent-enabled').classList.toggle('hidden', isAgentLight);
+        $('agent-enabled-hidden-note').classList.toggle('hidden', !isAgentLight);
+      }
+      function updateReviewModeVisibility() {
+        const isAgentLight = $('review-command').value.startsWith('run-agent');
+        $('wrap-review-mode').classList.toggle('hidden', isAgentLight);
+        $('review-mode-agent-note').classList.toggle('hidden', !isAgentLight);
+      }
       $('conv-enabled').addEventListener('change', () => { $('conv-body').classList.toggle('hidden', !$('conv-enabled').checked); render(); });
       $('conv-type').addEventListener('change', updateConvFields);
-      $('agent-enabled').addEventListener('change', () => {
-        const on = $('agent-enabled').checked;
-        $('wrap-agent-iter').classList.toggle('hidden', !on);
-        $('wrap-agent-history').classList.toggle('hidden', !on);
-        render();
-      });
+      $('agent-enabled').addEventListener('change', () => { updateAgentFields(); render(); });
+      $('review-command').addEventListener('change', () => { updateAgentFields(); updateReviewModeVisibility(); render(); });
       updateConvFields();
+      updateAgentFields();
+      updateReviewModeVisibility();
+      scaleAgentCharFields();
 
       renderLlmGroups();
       render();

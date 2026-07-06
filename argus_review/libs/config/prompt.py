@@ -48,6 +48,7 @@ class PromptConfig(BaseModel):
     summary_reply_prompt_files: list[FilePath] | None = None
     agent_light_inline_prompt_files: list[FilePath] | None = None
     agent_light_summary_prompt_files: list[FilePath] | None = None
+    agent_light_combined_prompt_files: list[FilePath] | None = None
 
     # --- System Prompts ---
     system_agent_prompt_files: list[FilePath] | None = None
@@ -58,6 +59,7 @@ class PromptConfig(BaseModel):
     system_summary_reply_prompt_files: list[FilePath] | None = None
     system_agent_light_inline_prompt_files: list[FilePath] | None = None
     system_agent_light_summary_prompt_files: list[FilePath] | None = None
+    system_agent_light_combined_prompt_files: list[FilePath] | None = None
 
     # --- Include System Prompts ---
     include_agent_system_prompts: bool = True
@@ -99,6 +101,10 @@ class PromptConfig(BaseModel):
     @cached_property
     def agent_light_summary_prompt_files_or_default(self) -> list[Path]:
         return resolve_prompt_files(self.agent_light_summary_prompt_files, "default_agent_light_summary.md")
+
+    @cached_property
+    def agent_light_combined_prompt_files_or_default(self) -> list[Path]:
+        return resolve_prompt_files(self.agent_light_combined_prompt_files, "default_agent_light_combined.md")
 
     # --- System Prompts ---
     @cached_property
@@ -161,6 +167,12 @@ class PromptConfig(BaseModel):
             self.system_agent_light_summary_prompt_files, "default_system_agent_light_summary.md"
         )
 
+    @cached_property
+    def system_agent_light_combined_prompt_files_or_default(self) -> list[Path]:
+        return resolve_prompt_files(
+            self.system_agent_light_combined_prompt_files, "default_system_agent_light_combined.md"
+        )
+
     # --- Load Prompts ---
     def load_agent(self) -> list[str]:
         return [file.read_text(encoding="utf-8") for file in self.agent_prompt_files_or_default]
@@ -186,6 +198,9 @@ class PromptConfig(BaseModel):
     def load_agent_light_summary(self) -> list[str]:
         return [file.read_text(encoding="utf-8") for file in self.agent_light_summary_prompt_files_or_default]
 
+    def load_agent_light_combined(self) -> list[str]:
+        return [file.read_text(encoding="utf-8") for file in self.agent_light_combined_prompt_files_or_default]
+
     # --- Load System Prompts ---
     def load_system_agent(self) -> list[str]:
         return [file.read_text(encoding="utf-8") for file in self.system_agent_prompt_files_or_default]
@@ -210,3 +225,8 @@ class PromptConfig(BaseModel):
 
     def load_system_agent_light_summary(self) -> list[str]:
         return [file.read_text(encoding="utf-8") for file in self.system_agent_light_summary_prompt_files_or_default]
+
+    def load_system_agent_light_combined(self) -> list[str]:
+        return [
+            file.read_text(encoding="utf-8") for file in self.system_agent_light_combined_prompt_files_or_default
+        ]

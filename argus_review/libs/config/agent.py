@@ -29,3 +29,11 @@ class AgentConfig(BaseModel):
     # each iteration's prompt. Older tool outputs are elided once the budget is
     # exceeded, keeping per-iteration token cost bounded.
     max_history_chars: int = Field(default=24_000, ge=1_000, le=500_000)
+    # Hard budget on *actual* LLM token usage (prompt+completion) across the whole
+    # agent loop. Unlike max_total_context_chars (which only tracks tool-output
+    # chars), this bounds real provider-billed tokens directly — the metric the
+    # quota guardrails are actually meant to protect. Default is a safety net
+    # that rarely triggers on a well-behaved loop; lower it for tighter quotas.
+    # 0 disables the check entirely (relies on max_iterations /
+    # max_total_context_chars instead), since not every provider reports usage.
+    max_total_tokens: int = Field(default=100_000, ge=0, le=10_000_000)

@@ -146,12 +146,36 @@ class PromptService(PromptServiceProtocol):
         return cls.with_language(prompt)
 
     @classmethod
+    def build_agent_light_combined_request(
+            cls,
+            context: PromptContextSchema,
+            base_sha: str,
+            head_sha: str,
+            conventions_inventory: str = "",
+    ) -> str:
+        instruction = cls.prepare_prompt(settings.prompt.load_agent_light_combined(), context)
+        parts = [
+            instruction,
+            cls._agent_light_metadata(context, base_sha, head_sha),
+            cls._agent_light_tool_guidance(base_sha, head_sha),
+        ]
+        if conventions_inventory.strip():
+            parts.append(conventions_inventory.strip())
+
+        prompt = "\n\n".join(parts)
+        return cls.with_language(prompt)
+
+    @classmethod
     def build_system_agent_light_inline_request(cls) -> str:
         return cls.prepare_prompt(settings.prompt.load_system_agent_light_inline(), PromptContextSchema())
 
     @classmethod
     def build_system_agent_light_summary_request(cls) -> str:
         return cls.prepare_prompt(settings.prompt.load_system_agent_light_summary(), PromptContextSchema())
+
+    @classmethod
+    def build_system_agent_light_combined_request(cls) -> str:
+        return cls.prepare_prompt(settings.prompt.load_system_agent_light_combined(), PromptContextSchema())
 
     @classmethod
     def build_inline_request(cls, diff: DiffFileSchema, context: PromptContextSchema) -> str:

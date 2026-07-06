@@ -1,4 +1,3 @@
-from argus_review.libs.diff.models import FileMode
 from argus_review.libs.logger import get_logger
 from argus_review.services.conventions.service import get_conventions_service
 from argus_review.services.cost.types import CostServiceProtocol
@@ -9,16 +8,16 @@ from argus_review.services.policy.types import PolicyServiceProtocol
 from argus_review.services.prompt.adapter import build_prompt_context_from_review_info
 from argus_review.services.prompt.types import PromptServiceProtocol
 from argus_review.services.review.gateway.types import ReviewLLMGatewayProtocol, ReviewCommentGatewayProtocol
+from argus_review.services.review.internal.inline.line_validator import (
+    compute_valid_lines_by_file,
+    filter_by_valid_lines,
+)
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
 from argus_review.services.review.internal.inline.types import InlineCommentServiceProtocol
 from argus_review.services.review.runner.types import ReviewRunnerProtocol
 from argus_review.services.vcs.types import ReviewInfoSchema, VCSClientProtocol
 
 logger = get_logger("AGENT_INLINE_REVIEW_RUNNER")
-
-
-def _normalize_file(value: str) -> str:
-    return (value or "").strip().replace("\\", "/").lstrip("/")
 
 
 class AgentInlineReviewRunner(ReviewRunnerProtocol):
@@ -58,26 +57,7 @@ class AgentInlineReviewRunner(ReviewRunnerProtocol):
 
     def _valid_lines_by_file(self, review_info: ReviewInfoSchema) -> dict[str, set[int]]:
         """Map each changed file to the set of new-side line numbers a diff comment can anchor to."""
-        try:
-            raw_diff = self.git.get_diff(review_info.base_sha, review_info.head_sha)
-            diff = self.diff.parse(raw_diff)
-        except Exception as error:
-            logger.warning(f"Could not parse diff for line validation, skipping validation: {error}")
-            return {}
-
-        result: dict[str, set[int]] = {}
-        for file in diff.files:
-            if file.mode == FileMode.DELETED:
-                continue
-            lines = {
-                line.number
-                for hunk in file.hunks
-                for line in hunk.new_range.lines
-                if line.number is not None
-            }
-            result[_normalize_file(file.new_name or file.orig_name)] = lines
-
-        return result
+        return compute_valid_lines_by_file(self.git, self.diff, review_info)
 
     def _validate_line_numbers(
             self,
@@ -85,26 +65,7 @@ class AgentInlineReviewRunner(ReviewRunnerProtocol):
             review_info: ReviewInfoSchema,
     ) -> list[InlineCommentSchema]:
         valid_map = self._valid_lines_by_file(review_info)
-        if not valid_map:
-            # Nothing to validate against (empty or unparsable diff) — stay lenient.
-            return comments
-
-        kept: list[InlineCommentSchema] = []
-        dropped = 0
-        for comment in comments:
-            valid_lines = valid_map.get(_normalize_file(comment.file))
-            if valid_lines is not None and comment.line in valid_lines:
-                kept.append(comment)
-            else:
-                dropped += 1
-                logger.info(
-                    f"Dropping inline comment with non-diff line anchor: {comment.file}:{comment.line}"
-                )
-
-        if dropped:
-            logger.info(f"Dropped {dropped} inline comment(s) that did not anchor to a diff line")
-
-        return kept
+        return filter_by_valid_lines(comments, valid_map)
 
     async def run(self) -> None:
         await hook.emit_inline_review_start()

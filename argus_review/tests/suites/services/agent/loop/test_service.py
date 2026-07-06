@@ -167,6 +167,43 @@ async def test_force_final_returns_raw_when_forced_response_is_not_final_json(
 
 
 @pytest.mark.asyncio
+async def test_run_clears_token_usage_between_runs(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    agent_loop_service.max_total_tokens = 1_000
+
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            ChatResultSchema(
+                text='{"action":"TOOL_CALL","command":"ls"}',
+                total_tokens=1_200,
+                prompt_tokens=700,
+                completion_tokens=500,
+            ),
+            ChatResultSchema(text='{"action":"FINAL","content":"forced"}'),
+        ]),
+    )
+    first = await agent_loop_service.run("PROMPT", "SYSTEM")
+    assert first.stop_reason == "max_requests_or_context_limit"
+
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat(['{"action":"FINAL","content":"clean-run"}']),
+    )
+    second = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert second.stop_reason == "final"
+    assert second.final_text == "clean-run"
+    assert agent_loop_service.tokens_used == 0
+
+
+@pytest.mark.asyncio
 async def test_run_clears_internal_state_between_runs(
         monkeypatch: pytest.MonkeyPatch,
         agent_loop_service: AgentLoopService,
@@ -261,6 +298,69 @@ async def test_run_handles_empty_llm_response(
     assert result.stop_reason == "unstructured_response"
     assert result.final_text == ""
     assert result.traces[0].step.content == "Empty model response"
+
+
+@pytest.mark.asyncio
+async def test_run_forces_final_when_token_budget_reached(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_prompt_service: FakePromptService,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            ChatResultSchema(
+                text='{"action":"TOOL_CALL","command":"ls"}',
+                total_tokens=100,
+                prompt_tokens=60,
+                completion_tokens=40,
+            ),
+            ChatResultSchema(text='{"action":"FINAL","content":"forced-final"}'),
+        ]),
+    )
+    agent_loop_service.max_total_tokens = 50
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "max_requests_or_context_limit"
+    assert result.final_text == "forced-final"
+    assert any(
+        call[0] == "build_agent_request" and call[1]["force_final"] is True
+        for call in fake_prompt_service.calls
+    )
+
+
+@pytest.mark.asyncio
+async def test_run_does_not_force_final_on_tokens_when_budget_disabled(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    """max_total_tokens=0 must disable the token budget check entirely (no cap)."""
+    agent_loop_service.max_total_tokens = 0
+
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            ChatResultSchema(
+                text='{"action":"TOOL_CALL","command":"ls"}',
+                total_tokens=1_000_000,
+                prompt_tokens=900_000,
+                completion_tokens=100_000,
+            ),
+            ChatResultSchema(text='{"action":"FINAL","content":"done"}'),
+        ]),
+    )
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "final"
+    assert result.final_text == "done"
 
 
 @pytest.mark.asyncio

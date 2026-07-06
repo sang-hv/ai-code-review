@@ -39,6 +39,9 @@ argus-review --help
 | `argus-review run-summary`       | Runs **summary review** that posts a single summarizing comment.          | `argus-review run-summary`       |
 | `argus-review run-inline-reply`  | Generates **AI replies** to existing inline comment threads.              | `argus-review run-inline-reply`  |
 | `argus-review run-summary-reply` | Generates **AI replies** to existing summary review threads.              | `argus-review run-summary-reply` |
+| `argus-review run-agent`         | Low-quota: **one agent session** explores the repo via read-only tools and returns summary + inline comments together. | `argus-review run-agent` |
+| `argus-review run-agent-inline`  | Low-quota: one agent session, **inline comments only**.                   | `argus-review run-agent-inline`  |
+| `argus-review run-agent-summary` | Low-quota: one agent session, **summary only**.                           | `argus-review run-agent-summary` |
 | `argus-review clear-inline`      | Removes all **AI-generated inline comments** from the review.             | `argus-review clear-inline`      |
 | `argus-review clear-summary`     | Removes all **AI-generated summary comments** from the review.            | `argus-review clear-summary`     |
 | `argus-review show-config`       | Prints the currently resolved configuration (merged from YAML/JSON/ENV).  | `argus-review show-config`       |
@@ -84,6 +87,31 @@ argus-review run-summary
 ```
 
 Useful when inline feedback isn't required but a global analysis is.
+
+### 🪶 Low-quota Agent Review
+
+For projects on a tight LLM quota (or a low-throughput OpenAI-compatible provider),
+`run-agent` runs a **single agent session**: the model gets only merge-request
+metadata and a coding-convention inventory, then explores the diff/source itself
+via read-only shell tools (`ls`, `cat`, `rg`, `git diff`, `sed -n`, ...) before
+returning both the summary and inline comments in one response:
+
+```bash
+argus-review run-agent
+```
+
+To get just one half of that (still low-quota, still one agent session):
+
+```bash
+argus-review run-agent-inline
+argus-review run-agent-summary
+```
+
+These three always drive the agent loop regardless of the `agent.enabled` config
+flag — that flag only affects `run`/`run-inline`/`run-summary`/`run-context`.
+See [docs/agent-review-quota-proposal.md](../agent-review-quota-proposal.md) for
+the full design and tuning knobs (`agent.max_iterations`, `agent.max_history_chars`,
+`agent.max_total_tokens`, ...).
 
 ### 💬 Reply Modes
 

@@ -51,6 +51,7 @@ class ConventionModesConfig(BaseModel):
     summary: bool = True
     inline_reply: bool = True
     summary_reply: bool = True
+    combined: bool = True
 
     def is_enabled(self, mode: str) -> bool:
         return bool(getattr(self, mode, True))

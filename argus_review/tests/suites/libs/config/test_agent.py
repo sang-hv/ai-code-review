@@ -12,6 +12,7 @@ def test_agent_config_defaults() -> None:
     assert config.command_timeout == 10
     assert config.max_command_output_chars == 40_000
     assert config.max_history_chars == 24_000
+    assert config.max_total_tokens == 100_000
     assert len(config.allow_commands) > 0
 
 
@@ -24,6 +25,9 @@ def test_agent_config_rejects_invalid_limits() -> None:
 
     with pytest.raises(ValidationError):
         AgentConfig(max_history_chars=0)
+
+    with pytest.raises(ValidationError):
+        AgentConfig(max_total_tokens=-1)
 
 
 def test_agent_config_default_allow_commands_patterns_are_stable() -> None:

@@ -283,6 +283,25 @@ agent:
   # Helps protect token budget and avoids oversized responses from broad commands.
   max_command_output_chars: 40000
 
+  # Caps how much agent-loop history (previous tool outputs) is re-sent into
+  # each iteration's prompt. Older tool outputs are elided once the budget is
+  # exceeded, keeping per-iteration token cost bounded regardless of how many
+  # steps the agent has already taken.
+  max_history_chars: 24000
+
+  # Hard budget on *actual* LLM token usage (prompt + completion) across the
+  # whole agent loop, as reported by your provider. Once exceeded, the loop is
+  # forced to a final answer — this is the most direct quota guardrail; the
+  # char-based limits above only approximate it. Default (100000) is a safety
+  # net that rarely triggers on a well-behaved loop; lower it for tighter quotas.
+  # 0 disables the check entirely (useful if your provider doesn't report usage).
+  max_total_tokens: 100000
+
+  # NOTE: these knobs also apply to the low-quota `run-agent` / `run-agent-inline`
+  # / `run-agent-summary` commands, which always drive the agent loop with a
+  # lightweight metadata-only prompt — regardless of `agent.enabled` above.
+  # See docs/agent-review-quota-proposal.md.
+
 prompt:
   # ==============================
   # Custom context variables
@@ -362,6 +381,29 @@ prompt:
   # true  (default) → always prepend default_system_agent.md
   # false → only user-provided system_agent_prompt_files are used
   include_agent_system_prompts: true
+
+  # ==============================
+  # Agent-light prompts (run-agent / run-agent-inline / run-agent-summary)
+  # ==============================
+  # Separate, overridable prompt/contract files for the low-quota agent-light
+  # flow. Dynamic metadata (title, files changed, base/head SHA), tool
+  # guidance, and the coding-convention inventory are always injected around
+  # your instruction text — you only customize the task description.
+  #
+  # Defaults (if not defined):
+  #   agent_light_inline_prompt_files:          default_agent_light_inline.md
+  #   agent_light_summary_prompt_files:         default_agent_light_summary.md
+  #   agent_light_combined_prompt_files:        default_agent_light_combined.md   (run-agent)
+  #   system_agent_light_inline_prompt_files:    default_system_agent_light_inline.md
+  #   system_agent_light_summary_prompt_files:   default_system_agent_light_summary.md
+  #   system_agent_light_combined_prompt_files:  default_system_agent_light_combined.md
+  #
+  # agent_light_inline_prompt_files:
+  #   - ./prompts/agent_light_inline.md
+  # agent_light_summary_prompt_files:
+  #   - ./prompts/agent_light_summary.md
+  # agent_light_combined_prompt_files:
+  #   - ./prompts/agent_light_combined.md
 
   # ==============================
   # Inline prompts
@@ -540,6 +582,12 @@ conventions:
   # Timeout (seconds) applied per remote (url/git) source.
   timeout: 30
 
+  # Where resolved convention docs (local AND url/git) are materialized on
+  # disk for the agent-light flow (`run-agent*`) to search with rg/sed/cat,
+  # instead of receiving the full convention text in every prompt. Only
+  # written/rewritten when the source content actually changes.
+  cache_dir: .argus-review/cache/conventions
+
   # Where to load conventions from. Mix and match as many as you like.
   sources:
     # --- Local file or directory (relative to repo root, or absolute) ---
@@ -561,12 +609,15 @@ conventions:
     #   token: ${GIT_TOKEN}     # optional, for private repos (HTTPS)
 
   # Per-mode toggles. All modes are ON by default when `enabled: true`.
+  # `combined` controls the single-session `run-agent` flow specifically;
+  # `inline`/`summary` also cover `run-agent-inline`/`run-agent-summary`.
   modes:
     inline: true
     context: true
     summary: true
     inline_reply: true
     summary_reply: true
+    combined: true
 
 review:
   # Review mode determines which parts of files are reviewed.
