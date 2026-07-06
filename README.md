@@ -152,6 +152,11 @@ vcs:
 > - argus-review run-summary
 > - argus-review run-inline-reply
 > - argus-review run-summary-reply
+>
+> For tight LLM quotas, `argus-review run-agent` runs a single low-quota agent
+> session (metadata + read-only repo exploration) that produces both the
+> summary and inline comments, instead of one LLM call per file. See
+> [docs/agent-review-quota-proposal.md](./docs/agent-review-quota-proposal.md).
 
 ---
 
@@ -282,6 +287,9 @@ on:
           - run-summary
           - run-inline-reply
           - run-summary-reply
+          - run-agent
+          - run-agent-inline
+          - run-agent-summary
           - clear-inline
           - clear-summary
       pull-request-number:

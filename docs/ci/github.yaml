@@ -27,6 +27,9 @@ on:
           - run-summary
           - run-inline-reply
           - run-summary-reply
+          - run-agent
+          - run-agent-inline
+          - run-agent-summary
           - clear-inline
           - clear-summary
         required: true

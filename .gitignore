@@ -13,6 +13,7 @@ __pycache__/
 
 # Local review output (LLM/VCS artifacts) and test cache
 /artifacts/
+/.argus-review/
 .pytest_cache/
 
 # Distribution / packaging

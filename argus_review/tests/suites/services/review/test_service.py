@@ -8,6 +8,9 @@ from argus_review.services.review.gateway.review_dry_run_comment_gateway import 
 from argus_review.services.review.service import ReviewService
 from argus_review.tests.fixtures.services.cost import FakeCostService
 from argus_review.tests.fixtures.services.review.runner.context import FakeContextReviewRunner
+from argus_review.tests.fixtures.services.review.runner.agent_combined import FakeAgentReviewRunner
+from argus_review.tests.fixtures.services.review.runner.agent_inline import FakeAgentInlineReviewRunner
+from argus_review.tests.fixtures.services.review.runner.agent_summary import FakeAgentSummaryReviewRunner
 from argus_review.tests.fixtures.services.review.runner.inline import FakeInlineReviewRunner
 from argus_review.tests.fixtures.services.review.runner.inline_reply import FakeInlineReplyReviewRunner
 from argus_review.tests.fixtures.services.review.runner.summary import FakeSummaryReviewRunner
@@ -62,6 +65,44 @@ async def test_run_summary_reply_review_invokes_runner(
     """Should call run() on SummaryReplyReviewRunner."""
     await review_service.run_summary_reply_review()
     assert fake_summary_reply_review_runner.calls == [("run", {})]
+
+
+@pytest.mark.asyncio
+async def test_run_agent_inline_review_invokes_runner(
+        review_service: ReviewService,
+        fake_agent_inline_review_runner: FakeAgentInlineReviewRunner
+):
+    """Should call run() on AgentInlineReviewRunner."""
+    await review_service.run_agent_inline_review()
+    assert fake_agent_inline_review_runner.calls == [("run", {})]
+
+
+@pytest.mark.asyncio
+async def test_run_agent_summary_review_invokes_runner(
+        review_service: ReviewService,
+        fake_agent_summary_review_runner: FakeAgentSummaryReviewRunner
+):
+    """Should call run() on AgentSummaryReviewRunner."""
+    await review_service.run_agent_summary_review()
+    assert fake_agent_summary_review_runner.calls == [("run", {})]
+
+
+@pytest.mark.asyncio
+async def test_run_agent_review_invokes_combined_runner(
+        review_service: ReviewService,
+        fake_agent_review_runner: FakeAgentReviewRunner
+):
+    """Should call run() on the combined AgentReviewRunner (single session)."""
+    await review_service.run_agent_review()
+    assert fake_agent_review_runner.calls == [("run", {})]
+
+
+def test_review_service_agent_runners_use_agent_gateway():
+    """Agent-light runners must always drive the agent gateway, regardless of agent.enabled."""
+    service = ReviewService()
+    assert service.agent_inline_review_runner.review_agent_llm_gateway is service.review_agent_llm_gateway
+    assert service.agent_summary_review_runner.review_agent_llm_gateway is service.review_agent_llm_gateway
+    assert service.agent_review_runner.review_agent_llm_gateway is service.review_agent_llm_gateway
 
 
 def test_report_total_cost_with_data(

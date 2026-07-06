@@ -51,6 +51,7 @@ class ConventionModesConfig(BaseModel):
     summary: bool = True
     inline_reply: bool = True
     summary_reply: bool = True
+    combined: bool = True
 
     def is_enabled(self, mode: str) -> bool:
         return bool(getattr(self, mode, True))
@@ -68,5 +69,9 @@ class ConventionsConfig(BaseModel):
     enabled: bool = False
     heading: str = "Project Coding Conventions"
     timeout: float = 30  # seconds, per URL/git source
+    # Where URL/git (and local) convention docs are materialized so the
+    # agent-light flow can inspect them on disk with rg/sed/cat like any other
+    # repository file. Relative to the repo root.
+    cache_dir: str = ".argus-review/cache/conventions"
     sources: list[ConventionSource] = Field(default_factory=list)
     modes: ConventionModesConfig = ConventionModesConfig()

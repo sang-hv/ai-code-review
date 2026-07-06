@@ -57,7 +57,7 @@ class PromptService(PromptServiceProtocol):
             original_prompt_system: str,
     ) -> str:
         mode = "Return FINAL only." if force_final else "You can either call a tool or return FINAL."
-        history = format_traces(traces)
+        history = format_traces(traces, max_chars=settings.agent.max_history_chars)
         agent_prompt = cls.prepare_prompt(settings.prompt.load_agent(), PromptContextSchema())
 
         return (
@@ -67,6 +67,115 @@ class PromptService(PromptServiceProtocol):
             f"## Task\n{original_prompt}\n\n"
             f"## Agent history\n{history}\n\n"
         )
+
+    # --- Agent-light (metadata-only) task prompts ---
+    @staticmethod
+    def _agent_light_metadata(context: PromptContextSchema, base_sha: str, head_sha: str) -> str:
+        def join(values: list[str]) -> str:
+            return ", ".join(v for v in values if v) or "-"
+
+        return (
+            "## Merge request metadata\n"
+            f"- Title: {context.review_title or '-'}\n"
+            f"- Description: {context.review_description or '-'}\n"
+            f"- Author: {context.review_author_name or context.review_author_username or '-'}\n"
+            f"- Reviewers: {join(context.review_reviewers)}\n"
+            f"- Source branch: {context.source_branch or '-'}\n"
+            f"- Target branch: {context.target_branch or '-'}\n"
+            f"- Base SHA: {base_sha or '-'}\n"
+            f"- Head SHA: {head_sha or '-'}\n"
+            f"- Labels: {join(context.labels)}\n"
+            f"- Changed files:\n"
+            + "\n".join(f"  - {file}" for file in context.changed_files)
+        )
+
+    @classmethod
+    def _agent_light_tool_guidance(cls, base_sha: str, head_sha: str) -> str:
+        base = base_sha or "<base>"
+        head = head_sha or "<head>"
+        return (
+            "## How to gather context\n"
+            "You start with metadata only — no diff or convention text is preloaded. "
+            "Use read-only shell commands to pull in only what you need, then finalize:\n"
+            f"- `git diff {base}..{head} --name-only` — list changed files\n"
+            f"- `git diff {base}..{head} -- path/to/file` — inspect a file's diff\n"
+            "- `cat path/to/file`, `rg \"keyword\" .`, `head`, `tail`\n"
+            "- `rg -n \"keyword\" path/to/conventions.md`, `sed -n '120,180p' path/to/conventions.md` "
+            "to read only relevant convention sections\n\n"
+            "Prefer narrow commands. Stop reading as soon as you have enough evidence and return FINAL."
+        )
+
+    @classmethod
+    def build_agent_light_inline_request(
+            cls,
+            context: PromptContextSchema,
+            base_sha: str,
+            head_sha: str,
+            conventions_inventory: str = "",
+    ) -> str:
+        instruction = cls.prepare_prompt(settings.prompt.load_agent_light_inline(), context)
+        parts = [
+            instruction,
+            cls._agent_light_metadata(context, base_sha, head_sha),
+            cls._agent_light_tool_guidance(base_sha, head_sha),
+        ]
+        if conventions_inventory.strip():
+            parts.append(conventions_inventory.strip())
+
+        prompt = "\n\n".join(parts)
+        return cls.with_language(prompt)
+
+    @classmethod
+    def build_agent_light_summary_request(
+            cls,
+            context: PromptContextSchema,
+            base_sha: str,
+            head_sha: str,
+            conventions_inventory: str = "",
+    ) -> str:
+        instruction = cls.prepare_prompt(settings.prompt.load_agent_light_summary(), context)
+        parts = [
+            instruction,
+            cls._agent_light_metadata(context, base_sha, head_sha),
+            cls._agent_light_tool_guidance(base_sha, head_sha),
+        ]
+        if conventions_inventory.strip():
+            parts.append(conventions_inventory.strip())
+
+        prompt = "\n\n".join(parts)
+        return cls.with_language(prompt)
+
+    @classmethod
+    def build_agent_light_combined_request(
+            cls,
+            context: PromptContextSchema,
+            base_sha: str,
+            head_sha: str,
+            conventions_inventory: str = "",
+    ) -> str:
+        instruction = cls.prepare_prompt(settings.prompt.load_agent_light_combined(), context)
+        parts = [
+            instruction,
+            cls._agent_light_metadata(context, base_sha, head_sha),
+            cls._agent_light_tool_guidance(base_sha, head_sha),
+        ]
+        if conventions_inventory.strip():
+            parts.append(conventions_inventory.strip())
+
+        prompt = "\n\n".join(parts)
+        return cls.with_language(prompt)
+
+    @classmethod
+    def build_system_agent_light_inline_request(cls) -> str:
+        return cls.prepare_prompt(settings.prompt.load_system_agent_light_inline(), PromptContextSchema())
+
+    @classmethod
+    def build_system_agent_light_summary_request(cls) -> str:
+        return cls.prepare_prompt(settings.prompt.load_system_agent_light_summary(), PromptContextSchema())
+
+    @classmethod
+    def build_system_agent_light_combined_request(cls) -> str:
+        return cls.prepare_prompt(settings.prompt.load_system_agent_light_combined(), PromptContextSchema())
 
     @classmethod
     def build_inline_request(cls, diff: DiffFileSchema, context: PromptContextSchema) -> str:

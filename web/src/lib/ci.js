@@ -11,7 +11,26 @@ function llmEnvLines(llmSecrets, indent, refFn) {
   return llmSecrets.map((s) => `${indent}${s.env}: ${refFn(s.name)}`).join('\n');
 }
 
-export function ciIntegration(vcsProvider, llmSecrets) {
+// Every `argus-review` command the composite Action / Docker image accept.
+// Kept here (not derived from the schema) because CLI commands aren't part
+// of the pydantic config models.
+export const REVIEW_COMMANDS = [
+  'run',
+  'run-inline',
+  'run-context',
+  'run-summary',
+  'run-inline-reply',
+  'run-summary-reply',
+  'run-agent',
+  'run-agent-inline',
+  'run-agent-summary',
+  'clear-inline',
+  'clear-summary',
+];
+
+export function ciIntegration(vcsProvider, llmSecrets, reviewCommand = 'run') {
+  const cmd = REVIEW_COMMANDS.includes(reviewCommand) ? reviewCommand : 'run';
+
   switch (vcsProvider) {
     case 'GITHUB':
       return {
@@ -35,7 +54,7 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: ${ACTION}
         with:
-          review-command: run
+          review-command: ${cmd}
         env:
 ${llmEnvLines(llmSecrets, '          ', (n) => `\${{ secrets.${n} }}`)}
           VCS__PROVIDER: GITHUB
@@ -61,7 +80,7 @@ ${llmEnvLines(llmSecrets, '          ', (n) => `\${{ secrets.${n} }}`)}
       when: manual
   allow_failure: true
   script:
-    - argus-review run
+    - argus-review ${cmd}
   variables:
 ${llmEnvLines(llmSecrets, '    ', (n) => `"$${n}"`)}
     VCS__PROVIDER: "GITLAB"
@@ -84,7 +103,7 @@ ${llmEnvLines(llmSecrets, '    ', (n) => `"$${n}"`)}
           name: ArgusReview
           image: ${IMAGE}
           script:
-            - argus-review run
+            - argus-review ${cmd}
           # Set these as repository variables:
           #   ${llmSecrets.map((s) => s.name).join(', ')}, BITBUCKET_TOKEN
           # Mapped via env in the step, e.g.:
@@ -108,7 +127,7 @@ docker run --rm -v "$PWD:/app" \\
 ${llmSecrets.map((s) => `  -e ${s.env}="$${s.name}" \\`).join('\n')}
   -e VCS__PROVIDER=${vcsProvider} \\
   -e VCS__HTTP_CLIENT__API_TOKEN="$VCS_API_TOKEN" \\
-  ${IMAGE} run
+  ${IMAGE} ${cmd}
 # (also set VCS__PIPELINE__* for your provider — see docs/configs)`,
       };
   }

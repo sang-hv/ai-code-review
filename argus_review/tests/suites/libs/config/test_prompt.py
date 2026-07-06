@@ -190,3 +190,56 @@ def test_load_system_agent_prompts_include_false(monkeypatch: pytest.MonkeyPatch
     config = PromptConfig(system_agent_prompt_files=[custom_file], include_agent_system_prompts=False)
     assert config.system_agent_prompt_files_or_default == [custom_file]
     assert config.load_system_agent() == ["CUSTOM_SYS_AGENT"]
+
+
+# ---------- Agent-light Prompts ----------
+
+def test_load_agent_light_inline_prompts_from_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    dummy_file = tmp_path / "agent_light_inline.md"
+    dummy_file.write_text("AGENT_LIGHT_INLINE")
+    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
+
+    config = PromptConfig()
+    assert config.agent_light_inline_prompt_files_or_default == [dummy_file]
+    assert config.load_agent_light_inline() == ["AGENT_LIGHT_INLINE"]
+
+
+def test_load_agent_light_inline_prompts_from_custom_files(tmp_path: Path):
+    custom_file = tmp_path / "custom_agent_light_inline.md"
+    custom_file.write_text("CUSTOM_AGENT_LIGHT_INLINE")
+
+    config = PromptConfig(agent_light_inline_prompt_files=[custom_file])
+    assert config.agent_light_inline_prompt_files_or_default == [custom_file]
+    assert config.load_agent_light_inline() == ["CUSTOM_AGENT_LIGHT_INLINE"]
+
+
+def test_load_agent_light_summary_prompts_from_custom_files(tmp_path: Path):
+    custom_file = tmp_path / "custom_agent_light_summary.md"
+    custom_file.write_text("CUSTOM_AGENT_LIGHT_SUMMARY")
+
+    config = PromptConfig(agent_light_summary_prompt_files=[custom_file])
+    assert config.agent_light_summary_prompt_files_or_default == [custom_file]
+    assert config.load_agent_light_summary() == ["CUSTOM_AGENT_LIGHT_SUMMARY"]
+
+
+def test_load_system_agent_light_prompts_from_custom_files(tmp_path: Path):
+    inline_file = tmp_path / "sys_agent_light_inline.md"
+    inline_file.write_text("SYS_AGENT_LIGHT_INLINE")
+    summary_file = tmp_path / "sys_agent_light_summary.md"
+    summary_file.write_text("SYS_AGENT_LIGHT_SUMMARY")
+
+    config = PromptConfig(
+        system_agent_light_inline_prompt_files=[inline_file],
+        system_agent_light_summary_prompt_files=[summary_file],
+    )
+    assert config.load_system_agent_light_inline() == ["SYS_AGENT_LIGHT_INLINE"]
+    assert config.load_system_agent_light_summary() == ["SYS_AGENT_LIGHT_SUMMARY"]
+
+
+def test_load_system_agent_light_prompts_from_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    dummy_file = tmp_path / "sys_agent_light.md"
+    dummy_file.write_text("SYS_AGENT_LIGHT_DEFAULT")
+    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
+
+    config = PromptConfig()
+    assert config.load_system_agent_light_inline() == ["SYS_AGENT_LIGHT_DEFAULT"]
