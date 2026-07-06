@@ -1,0 +1,38 @@
+name: Web Deploy
+
+on:
+  workflow_call:
+
+jobs:
+  action:
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up virtualenv
+        run: python3.12 -m venv .venv
+        working-directory: .
+
+      - name: Install ArgusReview (for dump-schema)
+        run: .venv/bin/pip install --no-cache-dir .
+        working-directory: .
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync config schema
+        run: ../.venv/bin/argus-review dump-schema -o public/schema.json
+
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: web
+          command: pages deploy dist --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }}
