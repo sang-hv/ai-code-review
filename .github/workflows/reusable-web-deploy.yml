@@ -12,19 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up virtualenv
-        run: python3.12 -m venv .venv
-        working-directory: .
-
-      - name: Install ArgusReview (for dump-schema)
-        run: .venv/bin/pip install --no-cache-dir .
-        working-directory: .
-
       - name: Install web dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Sync config schema
-        run: ../.venv/bin/argus-review dump-schema -o public/schema.json
 
       - name: Build
         run: pnpm build
