@@ -16,6 +16,8 @@ pytest_plugins = (
     "argus_review.tests.fixtures.services.review.runner.summary",
     "argus_review.tests.fixtures.services.review.runner.inline_reply",
     "argus_review.tests.fixtures.services.review.runner.summary_reply",
+    "argus_review.tests.fixtures.services.review.runner.agent_inline",
+    "argus_review.tests.fixtures.services.review.runner.agent_summary",
     "argus_review.tests.fixtures.services.review.gateway.review_comment_gateway",
     "argus_review.tests.fixtures.services.review.gateway.review_agent_llm_gateway",
     "argus_review.tests.fixtures.services.review.gateway.review_direct_llm_gateway",

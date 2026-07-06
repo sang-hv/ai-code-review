@@ -64,6 +64,36 @@ def run_summary_reply():
     typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
 
 
+@app.command("run-agent")
+def run_agent():
+    """Run the full agent-light review pipeline (inline + summary, low quota)"""
+    from argus_review.cli.commands.run_agent_review import run_agent_review_command
+
+    typer.secho("Starting agent-light AI review...", fg=typer.colors.CYAN, bold=True)
+    asyncio.run(run_agent_review_command())
+    typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
+
+
+@app.command("run-agent-inline")
+def run_agent_inline():
+    """Run only the agent-light inline review (single session, low quota)"""
+    from argus_review.cli.commands.run_agent_inline_review import run_agent_inline_review_command
+
+    typer.secho("Starting agent-light inline AI review...", fg=typer.colors.CYAN)
+    asyncio.run(run_agent_inline_review_command())
+    typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
+
+
+@app.command("run-agent-summary")
+def run_agent_summary():
+    """Run only the agent-light summary review (single session, low quota)"""
+    from argus_review.cli.commands.run_agent_summary_review import run_agent_summary_review_command
+
+    typer.secho("Starting agent-light summary AI review...", fg=typer.colors.CYAN)
+    asyncio.run(run_agent_summary_review_command())
+    typer.secho("AI review completed successfully!", fg=typer.colors.GREEN, bold=True)
+
+
 @app.command("clear-inline")
 def clear_inline():
     """Remove all AI-generated inline review comments"""

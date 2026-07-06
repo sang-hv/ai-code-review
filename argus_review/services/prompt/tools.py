@@ -64,8 +64,41 @@ def format_trace(trace: AgentTraceSchema) -> str:
     return "\n".join(lines)
 
 
-def format_traces(traces: list[AgentTraceSchema]) -> str:
+def format_trace_compact(trace: AgentTraceSchema) -> str:
+    """Like `format_trace` but with the (large) tool output elided."""
+    lines = [f"Iteration: {trace.iteration}"]
+
+    if trace.step.command:
+        lines.append(f"Command: {trace.step.command}")
+
+    if trace.tool_output:
+        lines.append("Tool output: [elided to save context]")
+
+    if trace.warning:
+        lines.append(f"Warning: {trace.warning}")
+
+    return "\n".join(lines)
+
+
+def format_traces(traces: list[AgentTraceSchema], max_chars: int | None = None) -> str:
     if not traces:
         return "No previous steps."
 
-    return "\n\n---\n\n".join(map(format_trace, traces))
+    if max_chars is None:
+        return "\n\n---\n\n".join(map(format_trace, traces))
+
+    # Keep the most recent steps in full and elide older tool outputs once the
+    # running budget is exceeded, so re-sent history stays bounded per iteration.
+    rendered: dict[int, str] = {}
+    used = 0
+    for index in range(len(traces) - 1, -1, -1):
+        full = format_trace(traces[index])
+        if used + len(full) <= max_chars:
+            rendered[index] = full
+            used += len(full)
+        else:
+            compact = format_trace_compact(traces[index])
+            rendered[index] = compact
+            used += len(compact)
+
+    return "\n\n---\n\n".join(rendered[index] for index in range(len(traces)))

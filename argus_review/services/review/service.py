@@ -18,6 +18,8 @@ from argus_review.services.review.internal.inline_reply.service import InlineCom
 from argus_review.services.review.internal.summary.service import SummaryCommentService
 from argus_review.services.review.internal.summary_reply.service import SummaryCommentReplyService
 from argus_review.services.review.runner.context import ContextReviewRunner
+from argus_review.services.review.runner.agent_inline import AgentInlineReviewRunner
+from argus_review.services.review.runner.agent_summary import AgentSummaryReviewRunner
 from argus_review.services.review.runner.inline import InlineReviewRunner
 from argus_review.services.review.runner.inline_reply import InlineReplyReviewRunner
 from argus_review.services.review.runner.summary import SummaryReviewRunner
@@ -129,6 +131,30 @@ class ReviewService:
             review_comment_gateway=self.review_comment_gateway
         )
 
+        # Agent-light runners always drive the agent gateway (regardless of
+        # settings.agent.enabled) with lightweight, metadata-only prompts.
+        self.agent_inline_review_runner = AgentInlineReviewRunner(
+            vcs=self.vcs,
+            git=self.git,
+            diff=self.diff,
+            cost=self.cost,
+            prompt=self.prompt,
+            policy=self.policy,
+            inline_comment=self.inline_comment,
+            review_agent_llm_gateway=self.review_agent_llm_gateway,
+            review_comment_gateway=self.review_comment_gateway
+        )
+        self.agent_summary_review_runner = AgentSummaryReviewRunner(
+            vcs=self.vcs,
+            git=self.git,
+            cost=self.cost,
+            prompt=self.prompt,
+            policy=self.policy,
+            summary_comment=self.summary_comment,
+            review_agent_llm_gateway=self.review_agent_llm_gateway,
+            review_comment_gateway=self.review_comment_gateway
+        )
+
     async def run_inline_review(self) -> None:
         await self.inline_review_runner.run()
 
@@ -143,6 +169,12 @@ class ReviewService:
 
     async def run_summary_reply_review(self) -> None:
         await self.summary_reply_review_runner.run()
+
+    async def run_agent_inline_review(self) -> None:
+        await self.agent_inline_review_runner.run()
+
+    async def run_agent_summary_review(self) -> None:
+        await self.agent_summary_review_runner.run()
 
     async def run_clear_inline_review(self) -> None:
         await self.review_comment_gateway.clear_inline_comments()

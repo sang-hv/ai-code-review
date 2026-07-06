@@ -42,6 +42,13 @@
           "minimum": 1000,
           "title": "Max Command Output Chars",
           "type": "integer"
+        },
+        "max_history_chars": {
+          "default": 24000,
+          "maximum": 500000,
+          "minimum": 1000,
+          "title": "Max History Chars",
+          "type": "integer"
         }
       },
       "title": "AgentConfig",
@@ -910,6 +917,11 @@
           "default": 30,
           "title": "Timeout",
           "type": "number"
+        },
+        "cache_dir": {
+          "default": ".argus-review/cache/conventions",
+          "title": "Cache Dir",
+          "type": "string"
         },
         "sources": {
           "items": {
@@ -2400,6 +2412,38 @@
           "default": null,
           "title": "Summary Reply Prompt Files"
         },
+        "agent_light_inline_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agent Light Inline Prompt Files"
+        },
+        "agent_light_summary_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Agent Light Summary Prompt Files"
+        },
         "system_agent_prompt_files": {
           "anyOf": [
             {
@@ -2495,6 +2539,38 @@
           ],
           "default": null,
           "title": "System Summary Reply Prompt Files"
+        },
+        "system_agent_light_inline_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Agent Light Inline Prompt Files"
+        },
+        "system_agent_light_summary_prompt_files": {
+          "anyOf": [
+            {
+              "items": {
+                "format": "file-path",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Agent Light Summary Prompt Files"
         },
         "include_agent_system_prompts": {
           "default": true,
@@ -2809,11 +2885,16 @@
           "^cat(?:\\s+.*)?$",
           "^rg(?:\\s+.*)?$",
           "^grep(?:\\s+.*)?$",
+          "^head(?:\\s+.*)?$",
+          "^tail(?:\\s+.*)?$",
+          "^wc(?:\\s+.*)?$",
+          "^sed\\s+-n\\s+.*$",
           "^git\\s+(?:status|show|diff|log|rev-parse|ls-files)(?:\\s+.*)?$"
         ],
         "command_timeout": 10,
         "max_total_context_chars": 40000,
-        "max_command_output_chars": 40000
+        "max_command_output_chars": 40000,
+        "max_history_chars": 24000
       }
     },
     "prompt": {
@@ -2828,12 +2909,16 @@
         "summary_prompt_files": null,
         "inline_reply_prompt_files": null,
         "summary_reply_prompt_files": null,
+        "agent_light_inline_prompt_files": null,
+        "agent_light_summary_prompt_files": null,
         "system_agent_prompt_files": null,
         "system_inline_prompt_files": null,
         "system_context_prompt_files": null,
         "system_summary_prompt_files": null,
         "system_inline_reply_prompt_files": null,
         "system_summary_reply_prompt_files": null,
+        "system_agent_light_inline_prompt_files": null,
+        "system_agent_light_summary_prompt_files": null,
         "include_agent_system_prompts": true,
         "include_inline_system_prompts": true,
         "include_context_system_prompts": true,
@@ -2870,6 +2955,7 @@
         "enabled": false,
         "heading": "Project Coding Conventions",
         "timeout": 30.0,
+        "cache_dir": ".argus-review/cache/conventions",
         "sources": [],
         "modes": {
           "context": true,

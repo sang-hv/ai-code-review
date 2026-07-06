@@ -72,6 +72,9 @@ def dummy_review_service(monkeypatch: pytest.MonkeyPatch, review_service: Review
     monkeypatch.setattr("argus_review.cli.commands.run_summary_review.ReviewService", lambda: review_service)
     monkeypatch.setattr("argus_review.cli.commands.run_inline_reply_review.ReviewService", lambda: review_service)
     monkeypatch.setattr("argus_review.cli.commands.run_summary_reply_review.ReviewService", lambda: review_service)
+    monkeypatch.setattr("argus_review.cli.commands.run_agent_review.ReviewService", lambda: review_service)
+    monkeypatch.setattr("argus_review.cli.commands.run_agent_inline_review.ReviewService", lambda: review_service)
+    monkeypatch.setattr("argus_review.cli.commands.run_agent_summary_review.ReviewService", lambda: review_service)
 
 
 @pytest.mark.parametrize(
@@ -83,6 +86,9 @@ def dummy_review_service(monkeypatch: pytest.MonkeyPatch, review_service: Review
         (["run-summary"], "Starting summary AI review..."),
         (["run-inline-reply"], "Starting inline reply AI review..."),
         (["run-summary-reply"], "Starting summary reply AI review..."),
+        (["run-agent"], "Starting agent-light AI review..."),
+        (["run-agent-inline"], "Starting agent-light inline AI review..."),
+        (["run-agent-summary"], "Starting agent-light summary AI review..."),
     ],
 )
 def test_cli_commands_invoke_review_service_successfully(args: list[str], expected_output: str):

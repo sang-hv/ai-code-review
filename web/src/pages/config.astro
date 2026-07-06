@@ -49,6 +49,14 @@ const base = import.meta.env.BASE_URL;
             <div class="field">
               <label for="review-mode">Mode</label>
               <select id="review-mode"></select>
+              <span class="hint">
+                Which slice of each changed file the model sees.<br />
+                • <strong>ADDED_AND_REMOVED_WITH_CONTEXT</strong> — recommended default: changed lines + surrounding context. Good quality at moderate quota.<br />
+                • <strong>FULL_FILE_DIFF</strong> — full unified diff of changed files (more context, more tokens).<br />
+                • <strong>FULL_FILE_CURRENT / FULL_FILE_PREVIOUS</strong> — the whole file after / before changes. Needed for whole-file rules (e.g. "max 300 lines per file"); highest token cost.<br />
+                • <strong>ONLY_ADDED / ONLY_REMOVED / ADDED_AND_REMOVED</strong> — leanest, changed lines only.<br />
+                Tip: for whole-file conventions, use FULL_FILE_CURRENT, or enable Agent mode so the model can read files on demand without loading every file in full.
+              </span>
             </div>
           </fieldset>
 
@@ -97,12 +105,18 @@ const base = import.meta.env.BASE_URL;
             <div class="field">
               <div class="checkbox-row">
                 <input id="agent-enabled" type="checkbox" />
-                <label for="agent-enabled" style="margin:0;">Let the model explore the repo before reviewing</label>
+                <label for="agent-enabled" style="margin:0;">Enable agent mode — let the model explore the repo before reviewing</label>
               </div>
+              <span class="hint">Also powers the low-quota <code>run-agent</code> / <code>run-agent-inline</code> / <code>run-agent-summary</code> commands.</span>
             </div>
             <div class="field hidden" id="wrap-agent-iter">
               <label for="agent-iter">Max iterations</label>
               <input id="agent-iter" type="number" value="25" />
+            </div>
+            <div class="field hidden" id="wrap-agent-history">
+              <label for="agent-history">Max history chars</label>
+              <input id="agent-history" type="number" value="24000" />
+              <span class="hint">Caps re-sent tool-output history per step to keep quota bounded.</span>
             </div>
           </fieldset>
         </div>
@@ -241,7 +255,11 @@ const base = import.meta.env.BASE_URL;
         config.conventions = { enabled: true, sources: [src] };
       }
       if ($('agent-enabled').checked) {
-        config.agent = { enabled: true, max_iterations: Number($('agent-iter').value) || 25 };
+        config.agent = {
+          enabled: true,
+          max_iterations: Number($('agent-iter').value) || 25,
+          max_history_chars: Number($('agent-history').value) || 24000,
+        };
       }
 
       const body = yaml.dump(config, { indent: 2, lineWidth: 100, quotingType: '"' });
@@ -275,7 +293,7 @@ const base = import.meta.env.BASE_URL;
       $('llm-provider').addEventListener('change', () => { renderLlmGroups(); render(); });
       ['vcs-provider', 'vcs-insecure', 'review-language', 'review-mode',
         'conv-enabled', 'conv-type', 'conv-path', 'conv-url-val', 'conv-repo', 'conv-ref', 'conv-gitpath',
-        'agent-enabled', 'agent-iter'].forEach((id) => $(id).addEventListener('input', render));
+        'agent-enabled', 'agent-iter', 'agent-history'].forEach((id) => $(id).addEventListener('input', render));
 
       function updateConvFields() {
         const t = $('conv-type').value;
@@ -284,7 +302,12 @@ const base = import.meta.env.BASE_URL;
       }
       $('conv-enabled').addEventListener('change', () => { $('conv-body').classList.toggle('hidden', !$('conv-enabled').checked); render(); });
       $('conv-type').addEventListener('change', updateConvFields);
-      $('agent-enabled').addEventListener('change', () => { $('wrap-agent-iter').classList.toggle('hidden', !$('agent-enabled').checked); render(); });
+      $('agent-enabled').addEventListener('change', () => {
+        const on = $('agent-enabled').checked;
+        $('wrap-agent-iter').classList.toggle('hidden', !on);
+        $('wrap-agent-history').classList.toggle('hidden', !on);
+        render();
+      });
       updateConvFields();
 
       renderLlmGroups();

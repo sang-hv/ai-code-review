@@ -34,6 +34,50 @@ class FakePromptService(PromptServiceProtocol):
         ))
         return "AGENT_LOOP_PROMPT"
 
+    def build_agent_light_inline_request(
+            self,
+            context: PromptContextSchema,
+            base_sha: str,
+            head_sha: str,
+            conventions_inventory: str = "",
+    ) -> str:
+        self.calls.append((
+            "build_agent_light_inline_request",
+            {
+                "context": context,
+                "base_sha": base_sha,
+                "head_sha": head_sha,
+                "conventions_inventory": conventions_inventory,
+            }
+        ))
+        return "AGENT_LIGHT_INLINE_PROMPT"
+
+    def build_agent_light_summary_request(
+            self,
+            context: PromptContextSchema,
+            base_sha: str,
+            head_sha: str,
+            conventions_inventory: str = "",
+    ) -> str:
+        self.calls.append((
+            "build_agent_light_summary_request",
+            {
+                "context": context,
+                "base_sha": base_sha,
+                "head_sha": head_sha,
+                "conventions_inventory": conventions_inventory,
+            }
+        ))
+        return "AGENT_LIGHT_SUMMARY_PROMPT"
+
+    def build_system_agent_light_inline_request(self) -> str:
+        self.calls.append(("build_system_agent_light_inline_request", {}))
+        return "SYSTEM_AGENT_LIGHT_INLINE_PROMPT"
+
+    def build_system_agent_light_summary_request(self) -> str:
+        self.calls.append(("build_system_agent_light_summary_request", {}))
+        return "SYSTEM_AGENT_LIGHT_SUMMARY_PROMPT"
+
     def build_inline_request(self, diff: DiffFileSchema, context: PromptContextSchema) -> str:
         self.calls.append(("build_inline_request", {"diff": diff, "context": context}))
         return f"INLINE_PROMPT_FOR_{diff.file}"
