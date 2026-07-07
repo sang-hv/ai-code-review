@@ -6,9 +6,7 @@ from argus_review.services.artifacts.types import ArtifactsServiceProtocol
 from argus_review.services.review.gateway.review_dry_run_comment_gateway import ReviewDryRunCommentGateway
 from argus_review.services.review.gateway.types import ReviewCommentGatewayProtocol
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema, InlineCommentListSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 from argus_review.services.vcs.types import (
     UserSchema,
     ThreadKind,
@@ -76,14 +74,6 @@ class FakeReviewDryRunCommentGateway(ReviewCommentGatewayProtocol):
         }
 
     # --- Методы чтения ---
-    async def get_inline_threads(self) -> list[ReviewThreadSchema]:
-        self.calls.append(("get_inline_threads", {}))
-        return self.responses["get_inline_threads"]
-
-    async def get_summary_threads(self) -> list[ReviewThreadSchema]:
-        self.calls.append(("get_summary_threads", {}))
-        return self.responses["get_summary_threads"]
-
     async def get_inline_comments(self) -> list[ReviewCommentSchema]:
         self.calls.append(("get_inline_comments", {}))
         return self.responses["get_inline_comments"]
@@ -91,12 +81,6 @@ class FakeReviewDryRunCommentGateway(ReviewCommentGatewayProtocol):
     async def get_summary_comments(self) -> list[ReviewCommentSchema]:
         self.calls.append(("get_summary_comments", {}))
         return self.responses["get_summary_comments"]
-
-    async def process_inline_reply(self, thread_id: str, reply: InlineCommentReplySchema) -> None:
-        self.calls.append(("process_inline_reply", {"thread_id": thread_id, "reply": reply}))
-
-    async def process_summary_reply(self, thread_id: str, reply: SummaryCommentReplySchema) -> None:
-        self.calls.append(("process_summary_reply", {"thread_id": thread_id, "reply": reply}))
 
     async def process_inline_comment(self, comment: InlineCommentSchema) -> None:
         self.calls.append(("process_inline_comment", {"comment": comment}))

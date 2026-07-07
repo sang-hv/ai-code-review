@@ -30,7 +30,7 @@ pipeline {
     }
 
     stages {
-        stage('ArgusReview - Inline') {
+        stage('ArgusReview - Agent (inline + summary)') {
             steps {
                 sh '''
                     docker run --rm \
@@ -48,29 +48,13 @@ pipeline {
                       -e VCS__HTTP_CLIENT__API_TOKEN \
                       -e CORE__CONCURRENCY \
                       -v $(pwd):/app \
-                      supersentaj/argus-review:latest run-inline
+                      supersentaj/argus-review:latest run-agent
                 '''
             }
         }
 
-        stage('ArgusReview - Context') {
-            steps {
-                sh '''
-                    docker run --rm \
-                      -v $(pwd):/app \
-                      supersentaj/argus-review:latest run-context
-                '''
-            }
-        }
-
-        stage('ArgusReview - Summary') {
-            steps {
-                sh '''
-                    docker run --rm \
-                      -v $(pwd):/app \
-                      supersentaj/argus-review:latest run-summary
-                '''
-            }
-        }
+        // Or run only one side of the agent review:
+        //   supersentaj/argus-review:latest run-agent-inline
+        //   supersentaj/argus-review:latest run-agent-summary
     }
 }

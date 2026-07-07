@@ -131,6 +131,7 @@ async def test_run_forces_final_when_context_limit_reached(
     )
     fake_agent_tool_service.responses["execute"] = "0123456789"
     agent_loop_service.max_context_chars = 1
+    agent_loop_service.compaction_enabled = False
 
     result = await agent_loop_service.run("PROMPT", "SYSTEM")
 
@@ -159,6 +160,7 @@ async def test_force_final_returns_raw_when_forced_response_is_not_final_json(
     )
     fake_agent_tool_service.responses["execute"] = "0123456789"
     agent_loop_service.max_context_chars = 1
+    agent_loop_service.compaction_enabled = False
 
     result = await agent_loop_service.run("PROMPT", "SYSTEM")
 
@@ -398,3 +400,83 @@ async def test_run_persists_llm_tokens_in_traces(
     assert result.prompt_tokens == 15
     assert result.completion_tokens == 30
     assert result.total_tokens == 45
+
+
+@pytest.mark.asyncio
+async def test_compaction_triggered_when_threshold_reached(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_prompt_service: FakePromptService,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    """When context_used crosses the compaction threshold, compact and keep looping (no early break)."""
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            # First tool call pushes context_used past the (tiny) threshold.
+            ChatResultSchema(text='{"action":"TOOL_CALL","command":"cat big.txt"}'),
+            # Compaction call (build_agent_compaction_request -> llm.chat).
+            ChatResultSchema(text="progress: inspected big.txt"),
+            # Loop continues with a fresh iteration and returns FINAL.
+            ChatResultSchema(text='{"action":"FINAL","content":"done-after-compaction"}'),
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "0123456789"
+    agent_loop_service.max_context_chars = 1_000
+    agent_loop_service.compaction_enabled = True
+    agent_loop_service.compaction_threshold = 1
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "final"
+    assert result.final_text == "done-after-compaction"
+    assert any(call[0] == "build_agent_compaction_request" for call in fake_prompt_service.calls)
+    assert any(call[0] == "build_system_agent_compaction_request" for call in fake_prompt_service.calls)
+    assert agent_loop_service.compaction_summary == "progress: inspected big.txt"
+
+
+@pytest.mark.asyncio
+async def test_compaction_disabled_forces_final(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_prompt_service: FakePromptService,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    """With compaction disabled, reaching the context limit forces a final response (previous behavior)."""
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat([
+            '{"action":"TOOL_CALL","command":"cat big.txt"}',
+            '{"action":"FINAL","content":"forced-final"}',
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "0123456789"
+    agent_loop_service.max_context_chars = 1
+    agent_loop_service.compaction_enabled = False
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "max_requests_or_context_limit"
+    assert result.final_text == "forced-final"
+    assert not any(call[0] == "build_agent_compaction_request" for call in fake_prompt_service.calls)
+
+
+@pytest.mark.asyncio
+async def test_compact_resets_context_and_sets_summary(
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+) -> None:
+    """Calling compact() directly should summarize, reset context, and keep signatures intact."""
+    agent_loop_service.context_used = 500
+    agent_loop_service.signatures.add("ls")
+
+    await agent_loop_service.compact()
+
+    assert agent_loop_service.compaction_summary != ""
+    assert agent_loop_service.context_used == 0
+    assert agent_loop_service.traces == []
+    assert "ls" in agent_loop_service.signatures

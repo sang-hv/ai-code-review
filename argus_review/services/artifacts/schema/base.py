@@ -12,8 +12,6 @@ class ArtifactType(StrEnum):
     LLM = "LLM_INTERACTION"
     VCS_INLINE = "VCS_INLINE"
     VCS_SUMMARY = "VCS_SUMMARY"
-    VCS_INLINE_REPLY = "VCS_INLINE_REPLY"
-    VCS_SUMMARY_REPLY = "VCS_SUMMARY_REPLY"
 
 
 class BaseArtifactSchema(BaseModel, Generic[ArtifactData]):

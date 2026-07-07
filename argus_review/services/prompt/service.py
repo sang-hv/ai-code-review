@@ -1,17 +1,11 @@
 from argus_review.config import settings
 from argus_review.services.agent.loop.schema import AgentTraceSchema
-from argus_review.services.diff.schema import DiffFileSchema
 from argus_review.services.prompt.schema import PromptContextSchema
 from argus_review.services.prompt.tools import (
-    format_file,
-    format_files,
-    format_thread,
     format_traces,
     normalize_prompt,
 )
 from argus_review.services.prompt.types import PromptServiceProtocol
-from argus_review.services.conventions.service import get_conventions_service
-from argus_review.services.vcs.types import ReviewThreadSchema
 
 
 class PromptService(PromptServiceProtocol):
@@ -24,15 +18,6 @@ class PromptService(PromptServiceProtocol):
             prompt = normalize_prompt(prompt)
 
         return prompt
-
-    @classmethod
-    def with_conventions(cls, prompt: str, mode: str) -> str:
-        """Append the project coding-conventions block for `mode`, if enabled."""
-        conventions = get_conventions_service().render(mode)
-        if not conventions:
-            return prompt
-
-        return f"{prompt}\n\n{conventions}"
 
     @classmethod
     def with_language(cls, prompt: str) -> str:
@@ -55,18 +40,39 @@ class PromptService(PromptServiceProtocol):
             force_final: bool,
             original_prompt: str,
             original_prompt_system: str,
+            compaction_summary: str = "",
     ) -> str:
         mode = "Return FINAL only." if force_final else "You can either call a tool or return FINAL."
         history = format_traces(traces, max_chars=settings.agent.max_history_chars)
         agent_prompt = cls.prepare_prompt(settings.prompt.load_agent(), PromptContextSchema())
+
+        summary_block = (
+            f"## Progress summary (compacted)\n{compaction_summary}\n\n"
+            if compaction_summary.strip()
+            else ""
+        )
 
         return (
             f"{agent_prompt}\n\n"
             f"## Agent mode\n{mode}\n\n"
             f"## Task output format\n{original_prompt_system}\n\n"
             f"## Task\n{original_prompt}\n\n"
+            f"{summary_block}"
             f"## Agent history\n{history}\n\n"
         )
+
+    @classmethod
+    def build_agent_compaction_request(cls, traces: list[AgentTraceSchema], prior_summary: str = "") -> str:
+        history = format_traces(traces, max_chars=None)
+        parts = ["## Agent history\n" + history]
+        if prior_summary.strip():
+            parts.insert(0, f"## Prior progress summary\n{prior_summary.strip()}")
+
+        return "\n\n".join(parts)
+
+    @classmethod
+    def build_system_agent_compaction_request(cls) -> str:
+        return cls.prepare_prompt(settings.prompt.load_agent_compaction(), PromptContextSchema())
 
     # --- Agent-light (metadata-only) task prompts ---
     @staticmethod
@@ -90,18 +96,19 @@ class PromptService(PromptServiceProtocol):
         )
 
     @classmethod
-    def _agent_light_tool_guidance(cls, base_sha: str, head_sha: str) -> str:
+    def _agent_light_tool_guidance(cls, context: PromptContextSchema, base_sha: str, head_sha: str) -> str:
         base = base_sha or "<base>"
         head = head_sha or "<head>"
         return (
             "## How to gather context\n"
             "You start with metadata only — no diff or convention text is preloaded. "
             "Use read-only shell commands to pull in only what you need, then finalize:\n"
-            f"- `git diff {base}..{head} --name-only` — list changed files\n"
             f"- `git diff {base}..{head} -- path/to/file` — inspect a file's diff\n"
             "- `cat path/to/file`, `rg \"keyword\" .`, `head`, `tail`\n"
             "- `rg -n \"keyword\" path/to/conventions.md`, `sed -n '120,180p' path/to/conventions.md` "
             "to read only relevant convention sections\n\n"
+            "Review ONLY the files listed under 'Changed files' above — this run may cover a subset "
+            "of the merge request. Do not comment on files outside that list (another run handles them). "
             "Prefer narrow commands. Stop reading as soon as you have enough evidence and return FINAL."
         )
 
@@ -117,7 +124,7 @@ class PromptService(PromptServiceProtocol):
         parts = [
             instruction,
             cls._agent_light_metadata(context, base_sha, head_sha),
-            cls._agent_light_tool_guidance(base_sha, head_sha),
+            cls._agent_light_tool_guidance(context, base_sha, head_sha),
         ]
         if conventions_inventory.strip():
             parts.append(conventions_inventory.strip())
@@ -137,7 +144,7 @@ class PromptService(PromptServiceProtocol):
         parts = [
             instruction,
             cls._agent_light_metadata(context, base_sha, head_sha),
-            cls._agent_light_tool_guidance(base_sha, head_sha),
+            cls._agent_light_tool_guidance(context, base_sha, head_sha),
         ]
         if conventions_inventory.strip():
             parts.append(conventions_inventory.strip())
@@ -157,7 +164,7 @@ class PromptService(PromptServiceProtocol):
         parts = [
             instruction,
             cls._agent_light_metadata(context, base_sha, head_sha),
-            cls._agent_light_tool_guidance(base_sha, head_sha),
+            cls._agent_light_tool_guidance(context, base_sha, head_sha),
         ]
         if conventions_inventory.strip():
             parts.append(conventions_inventory.strip())
@@ -178,101 +185,5 @@ class PromptService(PromptServiceProtocol):
         return cls.prepare_prompt(settings.prompt.load_system_agent_light_combined(), PromptContextSchema())
 
     @classmethod
-    def build_inline_request(cls, diff: DiffFileSchema, context: PromptContextSchema) -> str:
-        prompt = cls.prepare_prompt(settings.prompt.load_inline(), context)
-        prompt = cls.with_conventions(prompt, "inline")
-        prompt = cls.with_language(prompt)
-        return (
-            f"{prompt}\n\n"
-            f"## Diff\n\n"
-            f"{format_file(diff)}"
-        )
-
-    @classmethod
-    def build_summary_request(cls, diffs: list[DiffFileSchema], context: PromptContextSchema) -> str:
-        prompt = cls.prepare_prompt(settings.prompt.load_summary(), context)
-        prompt = cls.with_conventions(prompt, "summary")
-        prompt = cls.with_language(prompt)
-        changes = format_files(diffs)
-        return (
-            f"{prompt}\n\n"
-            f"## Changes\n\n"
-            f"{changes}\n"
-        )
-
-    @classmethod
-    def build_context_request(cls, diffs: list[DiffFileSchema], context: PromptContextSchema) -> str:
-        prompt = cls.prepare_prompt(settings.prompt.load_context(), context)
-        prompt = cls.with_conventions(prompt, "context")
-        prompt = cls.with_language(prompt)
-        changes = format_files(diffs)
-        return (
-            f"{prompt}\n\n"
-            f"## Diff\n\n"
-            f"{changes}\n"
-        )
-
-    @classmethod
-    def build_inline_reply_request(
-            cls,
-            diff: DiffFileSchema,
-            thread: ReviewThreadSchema,
-            context: PromptContextSchema
-    ) -> str:
-        prompt = cls.prepare_prompt(settings.prompt.load_inline_reply(), context)
-        prompt = cls.with_conventions(prompt, "inline_reply")
-        prompt = cls.with_language(prompt)
-        conversation = format_thread(thread)
-
-        return (
-            f"{prompt}\n\n"
-            f"## Conversation\n\n"
-            f"{conversation}\n\n"
-            f"## Diff\n\n"
-            f"{format_file(diff)}"
-        )
-
-    @classmethod
-    def build_summary_reply_request(
-            cls,
-            diffs: list[DiffFileSchema],
-            thread: ReviewThreadSchema,
-            context: PromptContextSchema
-    ) -> str:
-        prompt = cls.prepare_prompt(settings.prompt.load_summary_reply(), context)
-        prompt = cls.with_conventions(prompt, "summary_reply")
-        prompt = cls.with_language(prompt)
-        changes = format_files(diffs)
-        conversation = format_thread(thread)
-
-        return (
-            f"{prompt}\n\n"
-            f"## Conversation\n\n"
-            f"{conversation}\n\n"
-            f"## Changes\n\n"
-            f"{changes}"
-        )
-
-    @classmethod
     def build_system_agent_request(cls) -> str:
         return cls.prepare_prompt(settings.prompt.load_system_agent(), PromptContextSchema())
-
-    @classmethod
-    def build_system_inline_request(cls, context: PromptContextSchema) -> str:
-        return cls.prepare_prompt(settings.prompt.load_system_inline(), context)
-
-    @classmethod
-    def build_system_context_request(cls, context: PromptContextSchema) -> str:
-        return cls.prepare_prompt(settings.prompt.load_system_context(), context)
-
-    @classmethod
-    def build_system_summary_request(cls, context: PromptContextSchema) -> str:
-        return cls.prepare_prompt(settings.prompt.load_system_summary(), context)
-
-    @classmethod
-    def build_system_inline_reply_request(cls, context: PromptContextSchema) -> str:
-        return cls.prepare_prompt(settings.prompt.load_system_inline_reply(), context)
-
-    @classmethod
-    def build_system_summary_reply_request(cls, context: PromptContextSchema) -> str:
-        return cls.prepare_prompt(settings.prompt.load_system_summary_reply(), context)

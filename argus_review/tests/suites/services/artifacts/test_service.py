@@ -10,9 +10,7 @@ from argus_review.services.artifacts.schema.llm import LLMArtifactSchema, LLMArt
 from argus_review.services.artifacts.service import ArtifactsService
 from argus_review.services.cost.schema import CostReportSchema
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 
 
 @pytest.mark.asyncio
@@ -212,59 +210,3 @@ async def test_save_vcs_summary(
 
     assert json_data["type"] == "VCS_SUMMARY"
     assert json_data["data"]["summary_comment"]["text"] == "hello"
-
-
-@pytest.mark.asyncio
-async def test_save_vcs_inline_reply(
-        tmp_path: Path,
-        monkeypatch: pytest.MonkeyPatch,
-        artifacts_service: ArtifactsService
-):
-    monkeypatch.setattr(
-        settings,
-        "artifacts",
-        ArtifactsConfig(vcs_enabled=True, vcs_dir=tmp_path),
-    )
-
-    reply = InlineCommentReplySchema(message="ok")
-    thread_id = "123"
-
-    artifact_id = await artifacts_service.save_vcs_inline_reply(thread_id, reply)
-
-    artifact_path = tmp_path / f"{artifact_id}.json"
-    assert artifact_path.exists()
-
-    async with aiofiles.open(artifact_path, "r", encoding="utf-8") as file:
-        json_data = json.loads(await file.read())
-
-    assert json_data["type"] == "VCS_INLINE_REPLY"
-    assert json_data["data"]["thread_id"] == "123"
-    assert json_data["data"]["inline_comment_reply"]["message"] == "ok"
-
-
-@pytest.mark.asyncio
-async def test_save_vcs_summary_reply(
-        tmp_path: Path,
-        monkeypatch: pytest.MonkeyPatch,
-        artifacts_service: ArtifactsService
-):
-    monkeypatch.setattr(
-        settings,
-        "artifacts",
-        ArtifactsConfig(vcs_enabled=True, vcs_dir=tmp_path),
-    )
-
-    reply = SummaryCommentReplySchema(text="ok")
-    thread_id = "xyz"
-
-    artifact_id = await artifacts_service.save_vcs_summary_reply(thread_id, reply)
-
-    artifact_path = tmp_path / f"{artifact_id}.json"
-    assert artifact_path.exists()
-
-    async with aiofiles.open(artifact_path, "r", encoding="utf-8") as file:
-        json_data = json.loads(await file.read())
-
-    assert json_data["type"] == "VCS_SUMMARY_REPLY"
-    assert json_data["data"]["thread_id"] == "xyz"
-    assert json_data["data"]["summary_comment_reply"]["text"] == "ok"

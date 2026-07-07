@@ -80,3 +80,46 @@ async def test_run_skips_when_empty_summary(
 
     assert any(call[0] == "ask" for call in fake_review_direct_llm_gateway.calls)
     assert not any(call[0] == "process_summary_comment" for call in fake_review_comment_gateway.calls)
+
+
+@pytest.mark.asyncio
+async def test_run_chunks_and_concatenates_summaries(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_summary_review_runner: AgentSummaryReviewRunner,
+        fake_vcs_client: FakeVCSClient,
+        fake_review_comment_gateway: FakeReviewCommentGateway,
+        fake_review_direct_llm_gateway: FakeReviewDirectLLMGateway,
+        fake_summary_comment_service: FakeSummaryCommentService,
+):
+    """With 5 files and max_files_per_chunk=2, expect 3 chunk sessions with concatenated summaries."""
+    from argus_review.services.vcs.types import ReviewInfoSchema
+
+    monkeypatch.setattr("argus_review.config.settings.agent.max_files_per_chunk", 2)
+
+    fake_vcs_client.responses["get_review_info"] = ReviewInfoSchema(
+        changed_files=["a.py", "b.py", "c.py", "d.py", "e.py"],
+        base_sha="A",
+        head_sha="B",
+    )
+    fake_review_comment_gateway.responses["get_summary_comments"] = []
+
+    outputs = [SummaryCommentSchema(text=f"summary-{i}") for i in range(3)]
+    call_count = {"n": 0}
+
+    def parse_sequence(output: str):
+        result = outputs[call_count["n"]]
+        call_count["n"] += 1
+        return result
+
+    monkeypatch.setattr(fake_summary_comment_service, "parse_model_output", parse_sequence)
+
+    await agent_summary_review_runner.run()
+
+    ask_calls = [call for call in fake_review_direct_llm_gateway.calls if call[0] == "ask"]
+    assert len(ask_calls) == 3
+
+    summary_calls = [
+        call for call in fake_review_comment_gateway.calls if call[0] == "process_summary_comment"
+    ]
+    assert len(summary_calls) == 1
+    assert summary_calls[0][1]["comment"].text == "summary-0\n\nsummary-1\n\nsummary-2"

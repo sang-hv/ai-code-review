@@ -43,18 +43,16 @@ improve code quality, enforce consistency, and speed up the review process.
   **raw URL**, or a **git repo** (public or private). The AI reviews against *your* rules, not just generic defaults.
 - **VCS integration** — works out of the box with **GitLab**, **GitHub**, **Bitbucket Cloud**, **Bitbucket Server**,
   **Azure DevOps**, and **Gitea**.
-- **Customizable prompts** — adapt inline, context, and summary reviews to match your team's coding guidelines.
+- **Customizable prompts** — adapt inline and summary reviews to match your team's coding guidelines.
 - **Agent mode** — iterative ReAct-style loop where the model can **explore the repository** with shell commands
   (`ls`, `cat`, `rg`, `git`) before producing a final review, giving it deeper context than a single-shot call.
-- **Reply modes** — AI can now **participate in existing review threads**, adding follow-up replies in both inline and
-  summary discussions.
 - **Flexible configuration** — supports `YAML`, `JSON`, and `ENV`, with seamless overrides in CI/CD pipelines.
 - **ArgusReview runs fully client-side** — it never proxies or inspects your requests.
 
-ArgusReview runs automatically in your CI/CD pipeline and posts both **inline comments**, **summary reviews**, and now
-**AI-generated replies** directly inside your merge requests. With **agent mode** enabled, the model can autonomously
-explore the codebase before reviewing, resulting in more accurate and context-aware feedback. This makes reviews faster,
-more conversational, and still fully under human control.
+ArgusReview runs automatically in your CI/CD pipeline and posts both **inline comments** and **summary reviews**
+directly inside your merge requests. The agent autonomously explores the codebase before reviewing, resulting in
+more accurate and context-aware feedback, while keeping quota usage low. This makes reviews faster and still fully
+under human control.
 
 ---
 
@@ -63,22 +61,18 @@ more conversational, and still fully under human control.
 Curious how **ArgusReview** works in practice? Here are real Pull Requests reviewed entirely by the tool — one per
 mode:
 
-| Mode             | Description                                                                                                                                  |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| 🧩 Inline        | Adds **line-by-line comments** directly in the diff. Focuses on specific code changes.                                                       |
-| 🧠 Context       | Performs a **broader analysis across multiple files**, detecting cross-file issues and inconsistencies.                                      |
-| 📄 Summary       | Posts a **concise high-level summary** with key highlights, strengths, and major issues.                                                     |
-| 💬 Inline Reply  | Generates a **context-aware reply** to an existing inline comment thread. Can clarify decisions, propose fixes, or provide code suggestions. |
-| 💬 Summary Reply | Continues the **summary-level review discussion**, responding to reviewer comments with clarifications, rationale, or actionable next steps. |
+| Mode                | Description                                                                                                                             |
+|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| 🤖 Agent (combined) | Single agent session that explores the repo and produces both inline comments and a summary. Lowest quota cost.                          |
+| 🧩 Agent Inline     | Agent session focused on **line-by-line comments** directly in the diff.                                                                  |
+| 📄 Agent Summary    | Agent session that posts a **concise high-level summary** with key highlights, strengths, and major issues.                              |
 
 👉 Each review was generated automatically via GitHub Actions using the corresponding mode:
 
 ```bash
-argus-review run-inline
-argus-review run-summary
-argus-review run-context
-argus-review run-inline-reply
-argus-review run-summary-reply
+argus-review run-agent
+argus-review run-agent-inline
+argus-review run-agent-summary
 ```
 
 ---
@@ -104,7 +98,7 @@ pip install .
 Or build the Docker image locally:
 
 ```bash
-docker run --rm -v $(pwd):/app supersentaj/argus-review:latest run-summary
+docker run --rm -v $(pwd):/app supersentaj/argus-review:latest run-agent
 ```
 
 🐳 Pull from [Docker Hub](https://hub.docker.com/r/supersentaj/argus-review)
@@ -145,17 +139,16 @@ vcs:
 - Generate inline and/or summary comments (depending on the selected mode).
 - Use your chosen LLM provider (OpenAI GPT-4o-mini in this example).
 
-> **Note:** Running `argus-review run` executes the full review (inline + summary).
-> To run only one mode, use the dedicated subcommands:
-> - argus-review run-inline
-> - argus-review run-context
-> - argus-review run-summary
-> - argus-review run-inline-reply
-> - argus-review run-summary-reply
+> **Note:** `argus-review run-agent` runs a single low-quota agent session
+> (metadata + read-only repo exploration) that produces both the summary and
+> inline comments, instead of one LLM call per file. To run only one part of
+> the review, use the dedicated subcommands:
+> - argus-review run-agent-inline
+> - argus-review run-agent-summary
 >
-> For tight LLM quotas, `argus-review run-agent` runs a single low-quota agent
-> session (metadata + read-only repo exploration) that produces both the
-> summary and inline comments, instead of one LLM call per file. See
+> Utility commands are also available: `clear-inline`, `clear-summary` (remove
+> AI-generated comments), `show-config` (print the resolved configuration),
+> and `dump-schema` (dump the config JSON Schema). See
 > [docs/agent-review-quota-proposal.md](./docs/agent-review-quota-proposal.md).
 
 ---
@@ -279,14 +272,8 @@ on:
     inputs:
       review-command:
         type: choice
-        default: run
+        default: run-agent
         options:
-          - run
-          - run-inline
-          - run-context
-          - run-summary
-          - run-inline-reply
-          - run-summary-reply
           - run-agent
           - run-agent-inline
           - run-agent-summary
@@ -339,7 +326,7 @@ argus-review:
   rules:
     - if: '$CI_MERGE_REQUEST_IID'
   script:
-    - argus-review run
+    - argus-review run-agent
   variables:
     # --- LLM configuration ---
     LLM__PROVIDER: "OPENAI"

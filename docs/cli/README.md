@@ -18,7 +18,7 @@ pip install argus-review-code
 Run any command from your terminal:
 
 ```bash
-argus-review run
+argus-review run-agent
 ```
 
 Or display help:
@@ -33,64 +33,20 @@ argus-review --help
 
 | Command                          | Description                                                               | Typical Usage                    |
 |----------------------------------|---------------------------------------------------------------------------|----------------------------------|
-| `argus-review run`               | Runs the full review pipeline (inline + summary).                         | `argus-review run`               |
-| `argus-review run-inline`        | Runs only **inline review** (line-by-line comments).                      | `argus-review run-inline`        |
-| `argus-review run-context`       | Runs **context review** across multiple files for architectural feedback. | `argus-review run-context`       |
-| `argus-review run-summary`       | Runs **summary review** that posts a single summarizing comment.          | `argus-review run-summary`       |
-| `argus-review run-inline-reply`  | Generates **AI replies** to existing inline comment threads.              | `argus-review run-inline-reply`  |
-| `argus-review run-summary-reply` | Generates **AI replies** to existing summary review threads.              | `argus-review run-summary-reply` |
-| `argus-review run-agent`         | Low-quota: **one agent session** explores the repo via read-only tools and returns summary + inline comments together. | `argus-review run-agent` |
-| `argus-review run-agent-inline`  | Low-quota: one agent session, **inline comments only**.                   | `argus-review run-agent-inline`  |
-| `argus-review run-agent-summary` | Low-quota: one agent session, **summary only**.                           | `argus-review run-agent-summary` |
+| `argus-review run-agent`         | **One agent session** explores the repo via read-only tools and returns summary + inline comments together. | `argus-review run-agent` |
+| `argus-review run-agent-inline`  | One agent session, **inline comments only**.                              | `argus-review run-agent-inline`  |
+| `argus-review run-agent-summary` | One agent session, **summary only**.                                      | `argus-review run-agent-summary` |
 | `argus-review clear-inline`      | Removes all **AI-generated inline comments** from the review.             | `argus-review clear-inline`      |
 | `argus-review clear-summary`     | Removes all **AI-generated summary comments** from the review.            | `argus-review clear-summary`     |
 | `argus-review show-config`       | Prints the currently resolved configuration (merged from YAML/JSON/ENV).  | `argus-review show-config`       |
+| `argus-review dump-schema`       | Dumps the configuration JSON Schema (source of truth for all options).    | `argus-review dump-schema`       |
 
 ---
 
 ## 💡 Examples
 
-### 🧠 Full Review
+### 🪶 Agent Review
 
-Runs the complete review cycle — inline + summary:
-
-```bash
-argus-review run
-```
-
-### 🧩 Inline Review Only
-
-For quick line-by-line comments:
-
-```bash
-argus-review run-inline
-```
-
-Typical in CI/CD pipelines for fast feedback on changed files.
-
-### 🧠 Context Review
-
-For broader architectural or cross-file feedback:
-
-```bash
-argus-review run-context
-```
-
-The model receives the entire diff set and can highlight inconsistencies between modules.
-
-### 🗒️ Summary Review
-
-Posts one concise summary comment under the merge/pull request:
-
-```bash
-argus-review run-summary
-```
-
-Useful when inline feedback isn't required but a global analysis is.
-
-### 🪶 Low-quota Agent Review
-
-For projects on a tight LLM quota (or a low-throughput OpenAI-compatible provider),
 `run-agent` runs a **single agent session**: the model gets only merge-request
 metadata and a coding-convention inventory, then explores the diff/source itself
 via read-only shell tools (`ls`, `cat`, `rg`, `git diff`, `sed -n`, ...) before
@@ -100,29 +56,21 @@ returning both the summary and inline comments in one response:
 argus-review run-agent
 ```
 
-To get just one half of that (still low-quota, still one agent session):
+To get just one half of that (still one agent session):
 
 ```bash
 argus-review run-agent-inline
 argus-review run-agent-summary
 ```
 
-These three always drive the agent loop regardless of the `agent.enabled` config
-flag — that flag only affects `run`/`run-inline`/`run-summary`/`run-context`.
-See [docs/agent-review-quota-proposal.md](../agent-review-quota-proposal.md) for
-the full design and tuning knobs (`agent.max_iterations`, `agent.max_history_chars`,
-`agent.max_total_tokens`, ...).
-
-### 💬 Reply Modes
-
-Generate AI-based follow-ups to existing discussion threads:
-
-```bash
-argus-review run-inline-reply
-argus-review run-summary-reply
-```
-
-Replies only to comments originally created by ArgusReview.
+The agent loop supports **compaction** (summarizes its history instead of
+cutting off when the context budget is near full) and optional **file chunking**
+(`agent.max_files_per_chunk` splits large merge requests into batches). Tuning
+knobs live under the `agent:` config block — `agent.max_iterations`,
+`agent.max_total_context_chars`, `agent.max_command_output_chars`,
+`agent.max_history_chars`, `agent.max_total_tokens`,
+`agent.compaction_enabled`, `agent.compaction_threshold_ratio`,
+`agent.max_files_per_chunk`.
 
 ### 🧽 Clear Inline Comments
 

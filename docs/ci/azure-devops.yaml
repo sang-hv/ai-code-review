@@ -5,12 +5,9 @@
 # Can be launched manually with parameters for Pull Request, iteration, and command.
 #
 # Supported commands:
-#   - run
-#   - run-inline
-#   - run-summary
-#   - run-context
-#   - run-inline-reply
-#   - run-summary-reply
+#   - run-agent
+#   - run-agent-inline
+#   - run-agent-summary
 #   - clear-inline
 #   - clear-summary
 #
@@ -57,15 +54,12 @@ parameters:
 
   - name: COMMAND
     type: string
-    default: 'run'
+    default: 'run-agent'
     displayName: 'ArgusReview command'
     values:
-      - run
-      - run-inline
-      - run-summary
-      - run-context
-      - run-inline-reply
-      - run-summary-reply
+      - run-agent
+      - run-agent-inline
+      - run-agent-summary
       - clear-inline
       - clear-summary
 

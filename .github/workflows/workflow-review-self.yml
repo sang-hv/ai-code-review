@@ -8,14 +8,8 @@ on:
     inputs:
       review-command:
         type: choice
-        default: 'run'
+        default: 'run-agent'
         options:
-          - run
-          - run-inline
-          - run-context
-          - run-summary
-          - run-inline-reply
-          - run-summary-reply
           - run-agent
           - run-agent-inline
           - run-agent-summary

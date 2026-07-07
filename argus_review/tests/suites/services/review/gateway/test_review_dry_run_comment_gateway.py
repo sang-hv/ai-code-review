@@ -3,50 +3,10 @@ import pytest
 from argus_review.config import settings
 from argus_review.services.review.gateway.review_dry_run_comment_gateway import ReviewDryRunCommentGateway
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema, InlineCommentListSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 from argus_review.services.vcs.types import ReviewCommentSchema
 from argus_review.tests.fixtures.services.artifacts import FakeArtifactsService
 from argus_review.tests.fixtures.services.vcs import FakeVCSClient
-
-
-@pytest.mark.asyncio
-async def test_process_inline_reply_dry_run_logs_and_no_vcs_calls(
-        capsys: pytest.CaptureFixture,
-        fake_vcs_client: FakeVCSClient,
-        fake_artifacts_service: FakeArtifactsService,
-        review_dry_run_comment_gateway: ReviewDryRunCommentGateway
-):
-    """Dry-run: should log the inline reply but not call VCS."""
-    reply = InlineCommentReplySchema(message="AI reply dry-run")
-    await review_dry_run_comment_gateway.process_inline_reply("t1", reply)
-    output = capsys.readouterr().out
-
-    assert "[dry-run]" in output
-    assert "Would create inline reply" in output
-    assert not any(call[0].startswith("create_") for call in fake_vcs_client.calls)
-
-    assert ("save_vcs_inline_reply", {"thread_id": "t1", "reply": reply}) in fake_artifacts_service.calls
-
-
-@pytest.mark.asyncio
-async def test_process_summary_reply_dry_run_logs_and_no_vcs_calls(
-        capsys: pytest.CaptureFixture,
-        fake_vcs_client: FakeVCSClient,
-        fake_artifacts_service: FakeArtifactsService,
-        review_dry_run_comment_gateway: ReviewDryRunCommentGateway
-):
-    """Dry-run: should log the summary reply but not call VCS."""
-    reply = SummaryCommentReplySchema(text="Dry-run summary reply")
-    await review_dry_run_comment_gateway.process_summary_reply("t2", reply)
-    output = capsys.readouterr().out
-
-    assert "[dry-run]" in output
-    assert "Would create summary reply" in output
-    assert not any(call[0].startswith("create_") for call in fake_vcs_client.calls)
-
-    assert ("save_vcs_summary_reply", {"thread_id": "t2", "reply": reply}) in fake_artifacts_service.calls
 
 
 @pytest.mark.asyncio

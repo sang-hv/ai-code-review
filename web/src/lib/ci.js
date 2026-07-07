@@ -15,12 +15,6 @@ function llmEnvLines(llmSecrets, indent, refFn) {
 // Kept here (not derived from the schema) because CLI commands aren't part
 // of the pydantic config models.
 export const REVIEW_COMMANDS = [
-  'run',
-  'run-inline',
-  'run-context',
-  'run-summary',
-  'run-inline-reply',
-  'run-summary-reply',
   'run-agent',
   'run-agent-inline',
   'run-agent-summary',
@@ -28,8 +22,8 @@ export const REVIEW_COMMANDS = [
   'clear-summary',
 ];
 
-export function ciIntegration(vcsProvider, llmSecrets, reviewCommand = 'run') {
-  const cmd = REVIEW_COMMANDS.includes(reviewCommand) ? reviewCommand : 'run';
+export function ciIntegration(vcsProvider, llmSecrets, reviewCommand = 'run-agent') {
+  const cmd = REVIEW_COMMANDS.includes(reviewCommand) ? reviewCommand : 'run-agent';
 
   switch (vcsProvider) {
     case 'GITHUB':

@@ -30,6 +30,12 @@ class AgentLoopService(AgentLoopServiceProtocol):
         # 0 disables the token budget check (not every provider reports usage).
         self.max_total_tokens = settings.agent.max_total_tokens
 
+        self.compaction_enabled = settings.agent.compaction_enabled
+        self.compaction_threshold = int(
+            settings.agent.max_total_context_chars * settings.agent.compaction_threshold_ratio
+        )
+        self.compaction_summary = ""
+
         self.parser = LLMOutputJSONParser(AgentStepSchema)
         self.traces: list[AgentTraceSchema] = []
         self.signatures: set[str] = set()
@@ -41,7 +47,26 @@ class AgentLoopService(AgentLoopServiceProtocol):
         self.signatures = set()
         self.context_used = 0
         self.tokens_used = 0
+        self.compaction_summary = ""
         logger.debug("Agent loop state cleared")
+
+    async def compact(self) -> None:
+        logger.info(f"Compacting agent history: {len(self.traces)} traces, context_used={self.context_used}")
+
+        prompt = self.prompt.build_agent_compaction_request(self.traces, prior_summary=self.compaction_summary)
+        prompt_system = self.prompt.build_system_agent_compaction_request()
+        result = await self.llm.chat(prompt=prompt, prompt_system=prompt_system)
+
+        self.compaction_summary = (result.text or "").strip() or self.compaction_summary
+        self.tokens_used += result.total_tokens or 0
+
+        # Drop the raw traces/tool-output now that they're folded into the
+        # summary — signatures (duplicate-command guard) are intentionally
+        # NOT reset here, so the agent won't re-run a command it already used.
+        self.traces = []
+        self.context_used = 0
+
+        logger.info(f"Compaction done: summary_chars={len(self.compaction_summary)}")
 
     async def run_step(self, step: AgentStepSchema, chat: ChatResultSchema, iteration: int) -> AgentTraceSchema:
         if step.command in self.signatures:
@@ -82,6 +107,7 @@ class AgentLoopService(AgentLoopServiceProtocol):
             force_final=True,
             original_prompt=prompt,
             original_prompt_system=prompt_system,
+            compaction_summary=self.compaction_summary,
         )
         agent_prompt_system = self.prompt.build_system_agent_request()
         logger.debug(
@@ -140,6 +166,7 @@ class AgentLoopService(AgentLoopServiceProtocol):
                 force_final=False,
                 original_prompt=prompt,
                 original_prompt_system=prompt_system,
+                compaction_summary=self.compaction_summary,
             )
             agent_prompt_system = self.prompt.build_system_agent_request()
             logger.debug(
@@ -209,8 +236,16 @@ class AgentLoopService(AgentLoopServiceProtocol):
                 f"{self.tokens_used}/{self.max_total_tokens or '∞'} tokens"
             )
             if self.context_used >= self.max_context_chars:
-                logger.info("Agent context limit reached, forcing final response")
-                break
+                if self.compaction_enabled:
+                    await self.compact()
+                    # continue the loop with the freed-up budget instead of
+                    # cutting the review short.
+                else:
+                    logger.info("Agent context limit reached, forcing final response")
+                    break
+            elif self.compaction_enabled and self.context_used >= self.compaction_threshold:
+                await self.compact()
+
             if self.max_total_tokens and self.tokens_used >= self.max_total_tokens:
                 logger.info("Agent token budget reached, forcing final response")
                 break

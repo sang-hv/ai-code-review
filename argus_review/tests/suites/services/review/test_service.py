@@ -7,64 +7,9 @@ from argus_review.services.review.gateway.review_direct_llm_gateway import Revie
 from argus_review.services.review.gateway.review_dry_run_comment_gateway import ReviewDryRunCommentGateway
 from argus_review.services.review.service import ReviewService
 from argus_review.tests.fixtures.services.cost import FakeCostService
-from argus_review.tests.fixtures.services.review.runner.context import FakeContextReviewRunner
 from argus_review.tests.fixtures.services.review.runner.agent_combined import FakeAgentReviewRunner
 from argus_review.tests.fixtures.services.review.runner.agent_inline import FakeAgentInlineReviewRunner
 from argus_review.tests.fixtures.services.review.runner.agent_summary import FakeAgentSummaryReviewRunner
-from argus_review.tests.fixtures.services.review.runner.inline import FakeInlineReviewRunner
-from argus_review.tests.fixtures.services.review.runner.inline_reply import FakeInlineReplyReviewRunner
-from argus_review.tests.fixtures.services.review.runner.summary import FakeSummaryReviewRunner
-from argus_review.tests.fixtures.services.review.runner.summary_reply import FakeSummaryReplyReviewRunner
-
-
-@pytest.mark.asyncio
-async def test_run_inline_review_invokes_runner(
-        review_service: ReviewService,
-        fake_inline_review_runner: FakeInlineReviewRunner
-):
-    """Should call run() on InlineReviewRunner."""
-    await review_service.run_inline_review()
-    assert fake_inline_review_runner.calls == [("run", {})]
-
-
-@pytest.mark.asyncio
-async def test_run_context_review_invokes_runner(
-        review_service: ReviewService,
-        fake_context_review_runner: FakeContextReviewRunner
-):
-    """Should call run() on ContextReviewRunner."""
-    await review_service.run_context_review()
-    assert fake_context_review_runner.calls == [("run", {})]
-
-
-@pytest.mark.asyncio
-async def test_run_summary_review_invokes_runner(
-        review_service: ReviewService,
-        fake_summary_review_runner: FakeSummaryReviewRunner
-):
-    """Should call run() on SummaryReviewRunner."""
-    await review_service.run_summary_review()
-    assert fake_summary_review_runner.calls == [("run", {})]
-
-
-@pytest.mark.asyncio
-async def test_run_inline_reply_review_invokes_runner(
-        review_service: ReviewService,
-        fake_inline_reply_review_runner: FakeInlineReplyReviewRunner
-):
-    """Should call run() on InlineReplyReviewRunner."""
-    await review_service.run_inline_reply_review()
-    assert fake_inline_reply_review_runner.calls == [("run", {})]
-
-
-@pytest.mark.asyncio
-async def test_run_summary_reply_review_invokes_runner(
-        review_service: ReviewService,
-        fake_summary_reply_review_runner: FakeSummaryReplyReviewRunner
-):
-    """Should call run() on SummaryReplyReviewRunner."""
-    await review_service.run_summary_reply_review()
-    assert fake_summary_reply_review_runner.calls == [("run", {})]
 
 
 @pytest.mark.asyncio

@@ -11,17 +11,11 @@ from argus_review.services.artifacts.schema.vcs import (
     VCSInlineArtifactDataSchema,
     VCSSummaryArtifactSchema,
     VCSSummaryArtifactDataSchema,
-    VCSInlineReplyArtifactSchema,
-    VCSInlineReplyArtifactDataSchema,
-    VCSSummaryReplyArtifactSchema,
-    VCSSummaryReplyArtifactDataSchema,
 )
 from argus_review.services.artifacts.types import ArtifactsServiceProtocol
 from argus_review.services.cost.schema import CostReportSchema
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 
 logger = get_logger("ARTIFACTS_SERVICE")
 
@@ -98,32 +92,4 @@ class ArtifactsService(ArtifactsServiceProtocol):
             artifacts_enabled=settings.artifacts.vcs_enabled,
         )
 
-    @classmethod
-    async def save_vcs_inline_reply(cls, thread_id: str, reply: InlineCommentReplySchema) -> str | None:
-        artifact = VCSInlineReplyArtifactSchema(
-            data=VCSInlineReplyArtifactDataSchema(
-                thread_id=thread_id,
-                inline_comment_reply=reply,
-            )
-        )
 
-        return await cls.save(
-            artifact=artifact,
-            artifacts_dir=settings.artifacts.vcs_dir,
-            artifacts_enabled=settings.artifacts.vcs_enabled,
-        )
-
-    @classmethod
-    async def save_vcs_summary_reply(cls, thread_id: str, reply: SummaryCommentReplySchema) -> str | None:
-        artifact = VCSSummaryReplyArtifactSchema(
-            data=VCSSummaryReplyArtifactDataSchema(
-                thread_id=thread_id,
-                summary_comment_reply=reply,
-            )
-        )
-
-        return await cls.save(
-            artifact=artifact,
-            artifacts_dir=settings.artifacts.vcs_dir,
-            artifacts_enabled=settings.artifacts.vcs_enabled,
-        )

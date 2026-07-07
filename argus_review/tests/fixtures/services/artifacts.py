@@ -7,9 +7,7 @@ from argus_review.services.artifacts.service import ArtifactsService
 from argus_review.services.artifacts.types import ArtifactsServiceProtocol
 from argus_review.services.cost.schema import CostReportSchema
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 
 
 class FakeArtifactsService(ArtifactsServiceProtocol):
@@ -52,14 +50,6 @@ class FakeArtifactsService(ArtifactsServiceProtocol):
     async def save_vcs_summary(self, comment: SummaryCommentSchema) -> str | None:
         self.calls.append(("save_vcs_summary", {"comment": comment}))
         return "fake-summary-id"
-
-    async def save_vcs_inline_reply(self, thread_id: str, reply: InlineCommentReplySchema) -> str | None:
-        self.calls.append(("save_vcs_inline_reply", {"thread_id": thread_id, "reply": reply}))
-        return "fake-inline-reply-id"
-
-    async def save_vcs_summary_reply(self, thread_id: str, reply: SummaryCommentReplySchema) -> str | None:
-        self.calls.append(("save_vcs_summary_reply", {"thread_id": thread_id, "reply": reply}))
-        return "fake-summary-reply-id"
 
 
 @pytest.fixture

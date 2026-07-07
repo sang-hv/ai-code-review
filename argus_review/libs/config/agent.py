@@ -37,3 +37,10 @@ class AgentConfig(BaseModel):
     # 0 disables the check entirely (relies on max_iterations /
     # max_total_context_chars instead), since not every provider reports usage.
     max_total_tokens: int = Field(default=100_000, ge=0, le=10_000_000)
+
+    # Compaction: khi context tool-output đạt ngưỡng, tóm tắt lịch sử thay vì cắt cứng.
+    compaction_enabled: bool = True
+    compaction_threshold_ratio: float = Field(default=0.8, ge=0.1, le=1.0)
+
+    # 0 = tắt chunking (một session cho toàn bộ file như hiện tại).
+    max_files_per_chunk: int = Field(default=0, ge=0, le=1000)

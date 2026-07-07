@@ -117,11 +117,12 @@ script:
 > all files in one response. Too low a limit truncates the JSON and drops
 > comments. Prefer a higher value (≈4000+) when using `run-agent-inline`.
 
-> **Cheaper non-agent alternative:** if the goal is purely fewer LLM calls, the
-> existing `run-context` command already produces inline comments in a *single*
-> call across all files (vs. `run-inline`'s one-call-per-file), and switching
-> `review.mode` away from `FULL_FILE_DIFF` (e.g. `ADDED_AND_REMOVED_WITH_CONTEXT`)
-> shrinks diff tokens — both are deterministic and lower-risk than agent mode.
+> **Note:** the non-agent commands referenced in the "Original Proposal" section
+> below (`run`, `run-inline`, `run-context`, `run-summary`, and the `*-reply`
+> variants) have since been **removed**. Only the agent commands remain:
+> `run-agent`, `run-agent-inline`, `run-agent-summary` (plus `clear-inline`,
+> `clear-summary`, `show-config`, `dump-schema`). The agent loop now also does
+> history **compaction** and optional file **chunking** for large merge requests.
 
 ---
 
@@ -178,16 +179,10 @@ Command behavior:
 - `run-agent-inline`: runs one agent session and posts inline comments.
 - `run-agent`: runs agent inline review and agent summary review, similar to the existing `run` command, but using the new lightweight agent flow.
 
-The existing commands should remain unchanged:
-
-```bash
-argus-review run
-argus-review run-inline
-argus-review run-summary
-argus-review run-context
-```
-
-This keeps rollback simple and avoids changing current behavior for existing users.
+> **Status update:** the original proposal kept the non-agent commands
+> (`run`, `run-inline`, `run-summary`, `run-context`, `*-reply`) for backward
+> compatibility. They have since been removed — the agent flow is now the only
+> review path.
 
 ## Agent-Light Flow
 

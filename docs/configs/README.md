@@ -107,41 +107,40 @@ is shared across all providers via `vcs.pagination.per_page` (default `100`) and
 
 ## 🤖 Agent mode (`agent.*`)
 
-Two different things use the agent loop:
+`run-agent` / `run-agent-inline` / `run-agent-summary` **always** run an agent
+loop (ReAct-style: the model may call read-only shell tools before answering)
+with a lightweight, metadata-only prompt. This is the low-quota flow — see
+[docs/agent-review-quota-proposal.md](../agent-review-quota-proposal.md).
 
-- `agent.enabled: true` turns `run` / `run-inline` / `run-summary` / `run-context`
-  into a ReAct loop (the model may call read-only shell tools before answering).
-- `run-agent` / `run-agent-inline` / `run-agent-summary` **always** run the agent
-  loop with a lightweight, metadata-only prompt, regardless of `agent.enabled`.
-  This is the low-quota flow — see
-  [docs/agent-review-quota-proposal.md](../agent-review-quota-proposal.md).
+`agent.enabled` no longer has any effect on the CLI (all non-agent review
+commands have been removed); it is kept only as an internal selector between
+the agent-backed and direct LLM gateway used by the agent runners themselves.
 
 | Field                        | Default | Meaning                                                                                   |
 |-------------------------------|---------|---------------------------------------------------------------------------------------------|
-| `enabled`                     | `false` | Turns agent mode on for `run`/`run-inline`/`run-summary`/`run-context`.                    |
+| `enabled`                     | `true`  | Selects the agent-backed LLM gateway. Effectively always on for the agent commands.        |
 | `max_iterations`               | `25`    | Hard cap on ReAct steps (tool call + LLM response) before forcing a final answer.          |
 | `command_timeout`              | `10`    | Max seconds a single shell command may run before being killed.                            |
-| `max_total_context_chars`       | `40000` | Running total of tool-output characters per session; once exceeded, forces a final answer. |
+| `max_total_context_chars`       | `40000` | Running total of tool-output characters per session; once exceeded, triggers compaction (or forces a final answer if compaction is disabled). |
 | `max_command_output_chars`      | `40000` | Truncates a single command's output before it's added to context.                          |
 | `max_history_chars`            | `24000` | Caps re-sent tool-output history per step (older steps get elided) to bound token cost.    |
 | `max_total_tokens`             | `100000` | Hard budget on real prompt+completion tokens across the whole loop. This is the most direct quota guardrail — the char-based limits above only approximate it. `0` disables the check (useful if your provider doesn't report usage). |
 | `allow_commands`               | see code | Regex allow-list of shell commands the agent may run (`ls`, `cat`, `rg`, `grep`, `head`, `tail`, `wc`, `sed -n ...p`, `git status/show/diff/log/rev-parse/ls-files`). Read-only by design. |
+| `compaction_enabled`           | `true`  | When the context-used ratio crosses `compaction_threshold_ratio`, summarize the agent's history into a short progress note (via one extra LLM call) instead of cutting the loop short. The loop then continues with the freed-up budget. |
+| `compaction_threshold_ratio`   | `0.8`   | Fraction of `max_total_context_chars` at which compaction kicks in (`0.1`–`1.0`).            |
+| `max_files_per_chunk`          | `0`     | Split changed files into chunks of this size, each reviewed in its own clean agent session (map), then combine inline comments and concatenate per-chunk summaries (reduce, no extra LLM call). `0` disables chunking (single session for all files, previous behavior). Recommended for large MRs, e.g. `10`. |
 
 ---
 
 ## 📐 Coding conventions (`conventions.*`)
 
-Point `conventions.sources` at local `.md` docs, a raw URL, or a git repo. They
-get combined into a single section appended to prompts for the enabled modes
-(`conventions.modes.*`, all `true` by default: `inline`, `context`, `summary`,
-`inline_reply`, `summary_reply`, `combined`).
-
-For the agent-light flow (`run-agent*`), conventions are **not** appended in
-full — they are materialized to disk under `conventions.cache_dir`
-(default `.argus-review/cache/conventions`) and the agent only receives a
-listing (path + line count), inspecting relevant sections itself with
-`rg`/`sed -n`/`cat`. This keeps large convention docs (e.g. thousands of lines)
-from being sent on every call.
+Point `conventions.sources` at local `.md` docs, a raw URL, or a git repo.
+Conventions are materialized to disk under `conventions.cache_dir` (default
+`.argus-review/cache/conventions`) for the enabled modes (`conventions.modes.*`,
+all `true` by default) and the agent only receives a listing (path + line
+count), inspecting relevant sections itself with `rg`/`sed -n`/`cat`. This
+keeps large convention docs (e.g. thousands of lines) from being sent on
+every call.
 
 ---
 

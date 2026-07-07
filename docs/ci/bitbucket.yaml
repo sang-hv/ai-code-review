@@ -18,7 +18,7 @@ definitions:
         trigger: manual
         script:
           - echo "🚀 Starting ArgusReview for Bitbucket PR..."
-          - argus-review run
+          - argus-review run-agent
         variables:
           # ===============================
           # LLM provider & model
@@ -99,53 +99,29 @@ pipelines:
             - echo "Initializing Bitbucket ArgusReview..."
 
   custom:
-    # Run full review
+    # Full agent review (inline + summary in one session)
     argus-review-all:
       - step:
           <<: *argus-review-base
-          name: "ArgusReview (All)"
+          name: "ArgusReview (Agent)"
           script:
-            - argus-review run
+            - argus-review run-agent
 
-    # Inline review only
+    # Agent inline comments only
     argus-review-inline:
       - step:
           <<: *argus-review-base
-          name: "ArgusReview (Inline)"
+          name: "ArgusReview (Agent Inline)"
           script:
-            - argus-review run-inline
+            - argus-review run-agent-inline
 
-    # Context review only
-    argus-review-context:
-      - step:
-          <<: *argus-review-base
-          name: "ArgusReview (Context)"
-          script:
-            - argus-review run-context
-
-    # Summary review
+    # Agent summary only
     argus-review-summary:
       - step:
           <<: *argus-review-base
-          name: "ArgusReview (Summary)"
+          name: "ArgusReview (Agent Summary)"
           script:
-            - argus-review run-summary
-
-    # Inline reply mode
-    argus-review-inline-reply:
-      - step:
-          <<: *argus-review-base
-          name: "ArgusReview (Inline Reply)"
-          script:
-            - argus-review run-inline-reply
-
-    # Summary reply mode
-    argus-review-summary-reply:
-      - step:
-          <<: *argus-review-base
-          name: "ArgusReview (Summary Reply)"
-          script:
-            - argus-review run-summary-reply
+            - argus-review run-agent-summary
 
     argus-review-clear-inline:
       - step:

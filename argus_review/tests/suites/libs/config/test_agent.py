@@ -14,6 +14,9 @@ def test_agent_config_defaults() -> None:
     assert config.max_history_chars == 24_000
     assert config.max_total_tokens == 100_000
     assert len(config.allow_commands) > 0
+    assert config.compaction_enabled is True
+    assert config.compaction_threshold_ratio == 0.8
+    assert config.max_files_per_chunk == 0
 
 
 def test_agent_config_rejects_invalid_limits() -> None:

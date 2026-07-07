@@ -46,13 +46,10 @@ const base = import.meta.env.BASE_URL;
               <select id="review-command"></select>
               <span class="hint">
                 Which <code>argus-review</code> command the CI job/action executes.<br />
-                • <strong>run</strong> — full pipeline: inline comments (one LLM call per file) + one summary comment. Highest quality, highest quota.<br />
-                • <strong>run-inline</strong> / <strong>run-summary</strong> / <strong>run-context</strong> — one piece of the pipeline on its own (context = one call across all files, inline comments).<br />
-                • <strong>run-agent</strong> — low-quota ReAct flow: <em>one</em> agent session explores the diff/conventions via read-only shell tools, then returns both the summary and inline comments together. Cheapest way to get both.<br />
-                • <strong>run-agent-inline</strong> / <strong>run-agent-summary</strong> — same low-quota agent flow, but only inline or only the summary.<br />
-                • <strong>run-inline-reply</strong> / <strong>run-summary-reply</strong> — AI replies to existing review threads (usually a separate manual trigger).<br />
+                • <strong>run-agent</strong> — ReAct flow: <em>one</em> agent session explores the diff/conventions via read-only shell tools, then returns both the summary and inline comments together. Cheapest way to get both.<br />
+                • <strong>run-agent-inline</strong> / <strong>run-agent-summary</strong> — same agent flow, but only inline comments or only the summary.<br />
                 • <strong>clear-inline</strong> / <strong>clear-summary</strong> — remove previously posted AI comments.<br />
-                The <code>run-agent*</code> commands always drive the agent loop regardless of the "Agent mode" toggle below — that toggle only affects <strong>run</strong>/<strong>run-inline</strong>/<strong>run-summary</strong>/<strong>run-context</strong>.
+                All <code>run-agent*</code> commands drive the agent loop (with compaction + optional file chunking); tune them via the "Agent mode" fields below.
               </span>
             </div>
             <div class="field">
@@ -123,20 +120,19 @@ const base = import.meta.env.BASE_URL;
             <div class="field" id="wrap-agent-enabled">
               <div class="checkbox-row">
                 <input id="agent-enabled" type="checkbox" />
-                <label for="agent-enabled" style="margin:0;">Enable agent mode for run / run-inline / run-summary / run-context</label>
+                <label for="agent-enabled" style="margin:0;">Agent mode (always on for run-agent* commands)</label>
               </div>
               <span class="hint">
-                Turns those commands into a ReAct loop: instead of one direct LLM call per file, the
-                model can run read-only shell commands (<code>ls</code>, <code>cat</code>, <code>rg</code>,
-                <code>git diff</code>, <code>sed -n</code>, ...) to explore the repo before answering.
-                Usually more expensive than the plain commands, since it may still receive the full diff/conventions
-                up front and then re-sends tool history each step.
+                The remaining review commands (<code>run-agent</code>, <code>run-agent-inline</code>,
+                <code>run-agent-summary</code>) always run as a ReAct loop: the model uses read-only shell
+                commands (<code>ls</code>, <code>cat</code>, <code>rg</code>, <code>git diff</code>,
+                <code>sed -n</code>, ...) to explore the repo before answering. This toggle no longer changes
+                behavior for them — the tuning fields below (iterations, context budget, compaction, chunking)
+                are what control the loop.
               </span>
             </div>
             <p class="hint hidden" id="agent-enabled-hidden-note">
-              Hidden — <code>run-agent*</code> commands always run the agent loop regardless of this flag
-              (it only affects <strong>run</strong>/<strong>run-inline</strong>/<strong>run-summary</strong>/<strong>run-context</strong>).
-              The tuning fields below still apply.
+              <code>run-agent*</code> commands always run the agent loop. The tuning fields below still apply.
             </p>
             <div class="field hidden" id="wrap-agent-iter">
               <label for="agent-iter">Max iterations</label>
@@ -321,9 +317,9 @@ const base = import.meta.env.BASE_URL;
       }
       if ($('agent-enabled').checked || isAgentLightCommand) {
         config.agent = {};
-        // The checkbox only means something for run/run-inline/run-summary/
-        // run-context. run-agent* always drives the agent loop regardless —
-        // so its (possibly stale) checked state is never written out for them.
+        // run-agent* commands always drive the agent loop, so the enable flag
+        // is never written out for them; its (possibly stale) checked state is
+        // only honored for non-agent commands.
         if (!isAgentLightCommand && $('agent-enabled').checked) config.agent.enabled = true;
 
         const iter = Number($('agent-iter').value);
@@ -412,8 +408,8 @@ const base = import.meta.env.BASE_URL;
         const on = $('agent-enabled').checked || isAgentLight;
         ['wrap-agent-iter', 'wrap-agent-timeout', 'wrap-agent-context', 'wrap-agent-output', 'wrap-agent-history', 'wrap-agent-tokens']
           .forEach((id) => $(id).classList.toggle('hidden', !on));
-        // run-agent* always drives the agent loop, so the checkbox choosing
-        // to enable it for run/run-inline/run-summary/run-context is moot.
+        // run-agent* always drives the agent loop, so the enable checkbox is
+        // moot for them and stays hidden.
         $('wrap-agent-enabled').classList.toggle('hidden', isAgentLight);
         $('agent-enabled-hidden-note').classList.toggle('hidden', !isAgentLight);
       }
