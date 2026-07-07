@@ -41,6 +41,7 @@ class DiffParser:
                     hunks=[],
                 )
                 files.append(current_file)
+                current_hunk = None
                 continue
 
             # Дополняем header файла

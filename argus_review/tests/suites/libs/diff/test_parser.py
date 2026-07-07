@@ -113,3 +113,72 @@ deleted file mode 100644
     assert file.mode == FileMode.DELETED
     assert file.orig_name == "x"
     assert [line.content for line in file.hunks[0].orig_range.lines] == ["old line"]
+
+
+def test_parse_multiple_files() -> None:
+    """Should parse a diff containing several files without leaking hunk state.
+
+    Regression test: previously the parser did not reset ``current_hunk`` when a
+    new file started, so metadata lines of subsequent files (e.g. ``index ...``)
+    were misclassified as source lines and raised
+    ``ValueError: Unknown diff line prefix: 'index ...'``.
+    """
+    raw_diff = """diff --git a/first.yaml b/first.yaml
+index d8c89d03..ce408803 100644
+--- a/first.yaml
++++ b/first.yaml
+@@ -1,3 +1,3 @@
+ line1
+-old
++new
+ line3
+diff --git a/second.py b/second.py
+index 02b947f5..74c55077 100644
+--- a/second.py
++++ b/second.py
+@@ -1,2 +1,3 @@
+ keep
++added
+ keep2
+"""
+    diff = DiffParser.parse(raw_diff)
+
+    assert len(diff.files) == 2
+
+    first, second = diff.files
+    assert first.orig_name == "first.yaml"
+    assert first.new_name == "first.yaml"
+    assert len(first.hunks) == 1
+
+    assert second.orig_name == "second.py"
+    assert second.new_name == "second.py"
+    assert len(second.hunks) == 1
+
+    second_added: list[str] = [
+        line.content for line in second.hunks[0].new_range.lines if line.type is DiffLineType.ADDED
+    ]
+    assert second_added == ["added"]
+
+
+def test_parse_multiple_files_index_line_not_treated_as_source() -> None:
+    """The ``index`` metadata line of a later file must not become a diff line."""
+    raw_diff = """diff --git a/a.txt b/a.txt
+index 1111111..2222222 100644
+--- a/a.txt
++++ b/a.txt
+@@ -1,1 +1,1 @@
+-a
++b
+diff --git a/b.txt b/b.txt
+index 3333333..4444444 100644
+--- a/b.txt
++++ b/b.txt
+@@ -1,1 +1,1 @@
+-c
++d
+"""
+    diff = DiffParser.parse(raw_diff)
+
+    for file in diff.files:
+        contents = [line.content for line in file.hunks[0].lines]
+        assert not any(content.startswith("index ") for content in contents)
