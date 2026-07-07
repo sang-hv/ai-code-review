@@ -13,5 +13,8 @@
   "dependencies": {
     "astro": "^4.16.0",
     "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.107.0"
   }
 }

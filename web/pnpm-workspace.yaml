@@ -1,7 +1,9 @@
 # pnpm settings (pnpm v11+ reads build-script approvals from here, not package.json).
-# esbuild and sharp ship native binaries via postinstall/build scripts; pnpm v11
+# esbuild/sharp/workerd ship native binaries via postinstall/build scripts; pnpm v11
 # blocks unreviewed build scripts by default (strictDepBuilds=true), so approve them
 # explicitly to avoid ERR_PNPM_IGNORED_BUILDS during `pnpm install --frozen-lockfile`.
+# (astro needs esbuild/sharp; wrangler needs esbuild/workerd, and pulls sharp too.)
 allowBuilds:
   esbuild: true
   sharp: true
+  workerd: true
