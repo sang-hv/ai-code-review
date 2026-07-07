@@ -1,0 +1,22 @@
+name: 🌐 Web Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'web/**'
+      - '.github/workflows/workflow-web.yml'
+      - '.github/workflows/reusable-web-deploy.yml'
+  workflow_dispatch:
+
+# Deploy the latest commit for web/ only; cancel superseded in-flight runs.
+concurrency:
+  group: web-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: 🌐 web
+    uses: ./.github/workflows/reusable-web-deploy.yml
+    secrets: inherit

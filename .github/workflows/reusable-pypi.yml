@@ -26,7 +26,10 @@ jobs:
         run: .venv/bin/python -m build
 
       - name: Publish to PyPI
-        run: .venv/bin/twine upload dist/*
+        # --skip-existing makes re-runs idempotent: if this version was already
+        # uploaded (e.g. a later pipeline stage failed and the tag was re-pushed),
+        # twine skips it instead of failing with 400 "File already exists".
+        run: .venv/bin/twine upload --skip-existing dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

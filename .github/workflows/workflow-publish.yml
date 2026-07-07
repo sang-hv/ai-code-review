@@ -26,9 +26,3 @@ jobs:
     uses: ./.github/workflows/reusable-docker.yml
     needs: pypi
     secrets: inherit
-
-  web:
-    name: 🌐 web
-    uses: ./.github/workflows/reusable-web-deploy.yml
-    needs: docker
-    secrets: inherit
