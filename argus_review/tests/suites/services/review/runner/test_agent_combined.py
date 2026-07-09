@@ -152,6 +152,25 @@ async def test_run_skips_summary_posting_when_summary_empty(
     assert not any(call[0] == "process_summary_comment" for call in fake_review_comment_gateway.calls)
 
 
+@pytest.mark.asyncio
+async def test_run_posts_fallback_summary_when_both_summary_and_inline_empty(
+        agent_review_runner: AgentReviewRunner,
+        fake_agent_combined_result_service: FakeAgentCombinedResultService,
+        fake_review_comment_gateway: FakeReviewCommentGateway,
+):
+    fake_review_comment_gateway.responses["get_inline_comments"] = []
+    fake_review_comment_gateway.responses["get_summary_comments"] = []
+    fake_agent_combined_result_service.result = AgentCombinedResultSchema(summary="", comments=[])
+
+    await agent_review_runner.run()
+
+    summary_calls = [
+        call for call in fake_review_comment_gateway.calls if call[0] == "process_summary_comment"
+    ]
+    assert len(summary_calls) == 1
+    assert "model output was empty" in summary_calls[0][1]["comment"].text
+
+
 # === Chunking (Phase 3) ===
 
 def test_chunk_helper_splits_correctly():

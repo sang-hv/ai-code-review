@@ -23,6 +23,11 @@ from argus_review.services.vcs.types import ReviewInfoSchema, VCSClientProtocol
 
 logger = get_logger("AGENT_REVIEW_RUNNER")
 
+_EMPTY_OUTPUT_FALLBACK_SUMMARY = (
+    "Agent review completed but model output was empty for this run. "
+    "No inline findings were produced."
+)
+
 
 class AgentReviewRunner(ReviewRunnerProtocol):
     """
@@ -127,7 +132,7 @@ class AgentReviewRunner(ReviewRunnerProtocol):
         if not skip_inline:
             comments = InlineCommentListSchema(root=all_comments).dedupe()
             valid_map = compute_valid_lines_by_file(self.git, self.diff, review_info)
-            comments.root = filter_by_valid_lines(comments.root, valid_map)
+            comments.root = filter_by_valid_lines(comments.root, valid_map, review_info.changed_files)
             comments.root = self.policy.apply_for_inline_comments(comments.root)
             if comments.root:
                 logger.info(f"Posting {len(comments.root)} inline comments (agent review)")
@@ -136,12 +141,23 @@ class AgentReviewRunner(ReviewRunnerProtocol):
                 logger.info("No inline comments from agent review")
             await hook.emit_inline_review_complete(self.cost.aggregate())
 
+        posted_inline_count = 0 if skip_inline else len(comments.root)
+        summary_chars = len(final_summary)
+        logger.info(
+            f"Combined review output stats: inline_comments={posted_inline_count}, summary_chars={summary_chars}"
+        )
+
         if not skip_summary:
             if final_summary:
                 logger.info(f"Posting agent summary review comment ({len(final_summary)} chars)")
                 await self.review_comment_gateway.process_summary_comment(
                     SummaryCommentSchema(text=final_summary)
                 )
+            elif not all_comments:
+                logger.warning("Agent summary output was empty; posting fallback summary comment")
+                await self.review_comment_gateway.process_summary_comment(
+                    SummaryCommentSchema(text=_EMPTY_OUTPUT_FALLBACK_SUMMARY)
+                )
             else:
-                logger.warning("Agent summary output was empty, skipping comment")
+                logger.info("Inline findings were posted; summary text is empty so summary comment is skipped")
             await hook.emit_summary_review_complete(self.cost.aggregate())

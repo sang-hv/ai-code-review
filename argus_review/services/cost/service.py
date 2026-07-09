@@ -11,12 +11,28 @@ class CostService(CostServiceProtocol):
         self.pricing = settings.llm.load_pricing()
         self.reports: list[CostReportSchema] = []
 
+    def _resolve_pricing(self, model: str):
+        if pricing := self.pricing.get(model):
+            return pricing
+
+        lowered_map = {key.lower(): value for key, value in self.pricing.items()}
+        model_lower = model.lower()
+        if pricing := lowered_map.get(model_lower):
+            return pricing
+
+        if "/" in model_lower:
+            base_model = model_lower.rsplit("/", 1)[-1]
+            if pricing := lowered_map.get(base_model):
+                return pricing
+
+        return None
+
     def calculate(self, result: CalculateCostSchema) -> CostReportSchema | None:
         if (result.prompt_tokens is None) or (result.completion_tokens is None):
             return None
 
         model = settings.llm.meta.model
-        pricing = self.pricing.get(model)
+        pricing = self._resolve_pricing(model)
         if not pricing:
             logger.warning(f"No pricing found for {model=}, skipping cost calculation")
             return None

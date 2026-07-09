@@ -67,7 +67,7 @@ class AgentInlineReviewRunner(ReviewRunnerProtocol):
             review_info: ReviewInfoSchema,
     ) -> list[InlineCommentSchema]:
         valid_map = self._valid_lines_by_file(review_info)
-        return filter_by_valid_lines(comments, valid_map)
+        return filter_by_valid_lines(comments, valid_map, review_info.changed_files)
 
     async def _review_chunk(
             self,

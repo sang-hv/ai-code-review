@@ -64,6 +64,137 @@ async def test_run_returns_unstructured_response_when_json_parse_fails(
 
 
 @pytest.mark.asyncio
+async def test_run_recovers_tool_call_from_unstructured_bash_output(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat([
+            "bash\ngit rev-parse HEAD",
+            '{"action":"FINAL","content":"done"}',
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "8e122c9d40bc81846ae98bf2f0b113a4f0a01c4f"
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "final"
+    assert result.final_text == "done"
+    assert fake_agent_tool_service.calls == [("execute", {"command": "git rev-parse HEAD"})]
+    assert "Recovered from unstructured model output" in (result.traces[0].warning or "")
+
+
+@pytest.mark.asyncio
+async def test_run_recovers_diff_fallback_tool_call_from_unstructured_text(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat([
+            "I need the diff output to continue. I cannot proceed without full diff.",
+            '{"action":"FINAL","content":"done"}',
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "src/main.py"
+
+    result = await agent_loop_service.run(
+        "## Merge request metadata\n- Base SHA: a41c336965580592edfc5a07577da0beb82c8ae6\n"
+        "- Head SHA: 8e122c9d40bc81846ae98bf2f0b113a4f0a01c4f",
+        "SYSTEM",
+    )
+
+    assert result.stop_reason == "final"
+    assert result.final_text == "done"
+    assert fake_agent_tool_service.calls == [(
+        "execute",
+        {"command": "git diff --name-only a41c336965580592edfc5a07577da0beb82c8ae6..8e122c9d40bc81846ae98bf2f0b113a4f0a01c4f"},
+    )]
+
+
+@pytest.mark.asyncio
+async def test_run_recovers_command_from_malformed_tool_call_json(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    """TOOL_CALL JSON with unescaped quotes in command must be recovered, not end the loop."""
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat([
+            '{"action":"TOOL_CALL","command":"rg "useMemo" src/ 2>/dev/null | head"}',
+            '{"action":"FINAL","content":"done"}',
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "match"
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "final"
+    assert result.final_text == "done"
+    assert fake_agent_tool_service.calls == [
+        ("execute", {"command": 'rg "useMemo" src/ 2>/dev/null | head'})
+    ]
+
+
+@pytest.mark.asyncio
+async def test_force_final_handles_empty_fallback_response(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    """An empty force-final response must not raise a schema validation error."""
+    agent_loop_service.max_iterations = 1
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat([
+            '{"action":"TOOL_CALL","command":"ls"}',
+            "",
+        ]),
+    )
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "max_requests_or_context_limit"
+    assert result.final_text == ""
+
+
+@pytest.mark.asyncio
+async def test_run_recovers_tool_call_from_malformed_final_content(        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat([
+            '{"action":"FINAL","content":"bash\\ngit diff --name-only"}',
+            '{"action":"FINAL","content":"done"}',
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "src/a.py\nsrc/b.py"
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "final"
+    assert result.final_text == "done"
+    assert fake_agent_tool_service.calls == [("execute", {"command": "git diff --name-only"})]
+    assert "Recovered TOOL_CALL from malformed FINAL content" in (result.traces[0].warning or "")
+
+
+@pytest.mark.asyncio
 async def test_run_executes_tool_call_then_returns_final(
         monkeypatch: pytest.MonkeyPatch,
         agent_loop_service: AgentLoopService,
@@ -87,6 +218,78 @@ async def test_run_executes_tool_call_then_returns_final(
     assert len(result.traces) == 2
     assert fake_agent_tool_service.calls == [("execute", {"command": "rg foo src"})]
     assert result.traces[0].tool_output == "match-line"
+
+
+@pytest.mark.asyncio
+async def test_run_prefers_structured_tool_command_from_llm_result(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            ChatResultSchema(
+                text="this is not json",
+                tool_command="git diff --name-only",
+            ),
+            ChatResultSchema(text='{"action":"FINAL","content":"done"}'),
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "src/a.py"
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "final"
+    assert result.final_text == "done"
+    assert fake_agent_tool_service.calls == [("execute", {"command": "git diff --name-only"})]
+
+
+@pytest.mark.asyncio
+async def test_run_ignores_structured_tool_command_when_disabled(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    agent_loop_service.structured_tool_calls_enabled = False
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            ChatResultSchema(
+                text="this is not json",
+                tool_command="git diff --name-only",
+            ),
+        ]),
+    )
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "unstructured_response"
+    assert fake_agent_tool_service.calls == []
+
+
+@pytest.mark.asyncio
+async def test_run_does_not_recover_unstructured_step_when_disabled(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    agent_loop_service.unstructured_recovery_enabled = False
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat(["bash\ngit rev-parse HEAD"]),
+    )
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "unstructured_response"
+    assert fake_agent_tool_service.calls == []
 
 
 @pytest.mark.asyncio
@@ -284,22 +487,49 @@ async def test_run_handles_coerced_list_content_as_final(
 
 
 @pytest.mark.asyncio
-async def test_run_handles_empty_llm_response(
+async def test_run_retries_after_empty_llm_response(
         monkeypatch: pytest.MonkeyPatch,
         agent_loop_service: AgentLoopService,
         fake_llm_client: FakeLLMClient,
 ) -> None:
+    """An empty LLM response should be retried on the next iteration, not end the loop."""
     monkeypatch.setattr(
         fake_llm_client,
         "chat",
-        sequence_chat([""]),
+        sequence_chat([
+            "",
+            '{"action":"FINAL","content":"done-after-empty"}',
+        ]),
     )
 
     result = await agent_loop_service.run("PROMPT", "SYSTEM")
 
-    assert result.stop_reason == "unstructured_response"
-    assert result.final_text == ""
-    assert result.traces[0].step.content == "Empty model response"
+    assert result.stop_reason == "final"
+    assert result.final_text == "done-after-empty"
+
+
+@pytest.mark.asyncio
+async def test_run_forces_final_when_all_responses_empty(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+) -> None:
+    """If every iteration returns empty output, the loop exhausts and force-finals."""
+    agent_loop_service.max_iterations = 2
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat([
+            "",
+            "",
+            '{"action":"FINAL","content":"forced"}',
+        ]),
+    )
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "max_requests_or_context_limit"
+    assert result.final_text == "forced"
 
 
 @pytest.mark.asyncio
@@ -480,3 +710,64 @@ async def test_compact_resets_context_and_sets_summary(
     assert agent_loop_service.context_used == 0
     assert agent_loop_service.traces == []
     assert "ls" in agent_loop_service.signatures
+
+
+@pytest.mark.asyncio
+async def test_run_forces_final_when_compaction_summary_is_empty(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_prompt_service: FakePromptService,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            ChatResultSchema(text='{"action":"TOOL_CALL","command":"cat big.txt"}'),
+            ChatResultSchema(text=""),
+            ChatResultSchema(text='{"action":"FINAL","content":"forced-after-empty-compaction"}'),
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "0123456789"
+    agent_loop_service.max_context_chars = 1_000
+    agent_loop_service.compaction_enabled = True
+    agent_loop_service.compaction_threshold = 1
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "max_requests_or_context_limit"
+    assert result.final_text == "forced-after-empty-compaction"
+    assert any(call[0] == "build_agent_compaction_request" for call in fake_prompt_service.calls)
+
+
+@pytest.mark.asyncio
+async def test_run_forces_final_when_compaction_cap_reached(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_loop_service: AgentLoopService,
+        fake_llm_client: FakeLLMClient,
+        fake_prompt_service: FakePromptService,
+        fake_agent_tool_service: FakeAgentToolService,
+) -> None:
+    monkeypatch.setattr(
+        fake_llm_client,
+        "chat",
+        sequence_chat_results([
+            ChatResultSchema(text='{"action":"TOOL_CALL","command":"cat a.txt"}'),
+            ChatResultSchema(text="first summary"),
+            ChatResultSchema(text='{"action":"TOOL_CALL","command":"cat b.txt"}'),
+            ChatResultSchema(text='{"action":"FINAL","content":"forced-after-cap"}'),
+        ]),
+    )
+    fake_agent_tool_service.responses["execute"] = "0123456789"
+    agent_loop_service.max_context_chars = 1_000
+    agent_loop_service.compaction_enabled = True
+    agent_loop_service.compaction_threshold = 1
+    agent_loop_service.max_compactions_per_run = 1
+
+    result = await agent_loop_service.run("PROMPT", "SYSTEM")
+
+    assert result.stop_reason == "max_requests_or_context_limit"
+    assert result.final_text == "forced-after-cap"
+    compaction_calls = [call for call in fake_prompt_service.calls if call[0] == "build_agent_compaction_request"]
+    assert len(compaction_calls) == 1

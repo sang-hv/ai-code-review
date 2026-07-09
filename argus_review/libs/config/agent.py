@@ -5,6 +5,10 @@ from pydantic import BaseModel, Field
 
 class AgentConfig(BaseModel):
     enabled: bool = False
+    # Prefer native/structured tool command channel when provider supports it.
+    structured_tool_calls_enabled: bool = True
+    # Recover TOOL_CALL from loose text/malformed JSON to avoid early stop.
+    unstructured_recovery_enabled: bool = True
     max_iterations: int = Field(default=25, ge=1, le=100)
     allow_commands: list[re.Pattern[str]] = Field(
         default_factory=lambda: [
@@ -41,6 +45,8 @@ class AgentConfig(BaseModel):
     # Compaction: khi context tool-output đạt ngưỡng, tóm tắt lịch sử thay vì cắt cứng.
     compaction_enabled: bool = True
     compaction_threshold_ratio: float = Field(default=0.8, ge=0.1, le=1.0)
+    # Upper bound for compaction calls per loop run (0 disables this cap).
+    max_compactions_per_run: int = Field(default=2, ge=0, le=20)
 
     # 0 = tắt chunking (một session cho toàn bộ file như hiện tại).
     max_files_per_chunk: int = Field(default=0, ge=0, le=1000)

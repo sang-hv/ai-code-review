@@ -7,6 +7,8 @@ from argus_review.libs.config.agent import AgentConfig
 def test_agent_config_defaults() -> None:
     config = AgentConfig()
     assert config.enabled is False
+    assert config.structured_tool_calls_enabled is True
+    assert config.unstructured_recovery_enabled is True
     assert config.max_iterations == 25
     assert config.max_total_context_chars == 40_000
     assert config.command_timeout == 10
@@ -16,6 +18,7 @@ def test_agent_config_defaults() -> None:
     assert len(config.allow_commands) > 0
     assert config.compaction_enabled is True
     assert config.compaction_threshold_ratio == 0.8
+    assert config.max_compactions_per_run == 2
     assert config.max_files_per_chunk == 0
 
 
@@ -31,6 +34,9 @@ def test_agent_config_rejects_invalid_limits() -> None:
 
     with pytest.raises(ValidationError):
         AgentConfig(max_total_tokens=-1)
+
+    with pytest.raises(ValidationError):
+        AgentConfig(max_compactions_per_run=-1)
 
 
 def test_agent_config_default_allow_commands_patterns_are_stable() -> None:

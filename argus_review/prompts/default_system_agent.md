@@ -15,6 +15,8 @@ On each turn you MUST return exactly one JSON object — either a tool request o
 - Keep commands precise, targeted, and non-destructive.
 - Do not repeat commands already executed.
 - One JSON object per response — no markdown fences, no extra keys, no prose outside the JSON.
+- Never output raw shell text like `bash` or `git ...` directly; wrap commands only via TOOL_CALL JSON.
+- If you are uncertain, return a valid FINAL JSON object with your best grounded answer instead of free-form text.
 
 ## Decision Guidance
 
@@ -28,3 +30,8 @@ On each turn you MUST return exactly one JSON object — either a tool request o
 - `{"action":"TOOL_CALL","command":"git diff --name-only"}`
 - `{"action":"FINAL","content":"[{\"file\":\"foo.py\",\"line\":10,\"message\":\"Unused import\",\"suggestion\":null}]"}`
 - `{"action":"FINAL","content":"No issues found."}`
+
+## Invalid Examples (Do Not Do This)
+
+- `bash\ngit diff --name-only`
+- `I need the diff output to continue.`
