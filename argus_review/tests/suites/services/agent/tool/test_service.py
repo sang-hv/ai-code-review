@@ -152,3 +152,130 @@ async def test_execute_captures_stderr(
 
     assert "stderr:" in result
     assert "no such file" in result.lower() or "not found" in result.lower()
+
+
+@pytest.mark.asyncio
+async def test_execute_recovers_allowed_subcommand_from_compound_command(
+        agent_tool_service: AgentToolService,
+        fake_policy_service: FakePolicyService,
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def selective_policy(command: str) -> bool:
+        command = (command or "").strip()
+        return command in {"ls -la", "git status 2>&1"}
+
+    monkeypatch.setattr(fake_policy_service, "should_agent_run_command", selective_policy)
+
+    result = await agent_tool_service.execute("pwd; ls -la; git status 2>&1 | head -20")
+
+    assert "original_command:" in result
+    assert "command: ls -la" in result
+    assert "exit_code: 0" in result
+
+
+@pytest.mark.asyncio
+async def test_execute_recovery_skips_bare_stdin_filters(
+        agent_tool_service: AgentToolService,
+        fake_policy_service: FakePolicyService,
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A bare filter like 'head -50' (no file operand) must not be recovered — it would hang on stdin."""
+    def selective_policy(command: str) -> bool:
+        command = (command or "").strip()
+        # Policy would allow 'head -50', but recovery must skip it (needs stdin).
+        return command in {"head -50", "ls -la"}
+
+    monkeypatch.setattr(fake_policy_service, "should_agent_run_command", selective_policy)
+
+    result = await agent_tool_service.execute("find . -name '*.ts' | head -50")
+
+    assert "blocked by policy" in result.lower()
+
+
+@pytest.mark.asyncio
+async def test_execute_recovery_allows_filter_with_file_operand(
+        tmp_path: Path,
+        agent_tool_service: AgentToolService,
+        fake_policy_service: FakePolicyService,
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "a.txt").write_text("line1\nline2\n", encoding="utf-8")
+
+    def selective_policy(command: str) -> bool:
+        return (command or "").strip() == "head -1 a.txt"
+
+    monkeypatch.setattr(fake_policy_service, "should_agent_run_command", selective_policy)
+
+    result = await agent_tool_service.execute("pwd; head -1 a.txt")
+
+    assert "command: head -1 a.txt" in result
+    assert "line1" in result
+
+
+@pytest.mark.asyncio
+async def test_execute_falls_back_to_grep_when_rg_missing(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_tool_service: AgentToolService,
+        fake_policy_service: FakePolicyService,
+) -> None:
+    fake_policy_service.responses["should_agent_run_command"] = True
+
+    original_run = subprocess.run
+
+    def fake_run(*args, **kwargs):
+        argv = args[0]
+        if argv[0] == "rg":
+            raise FileNotFoundError("[Errno 2] No such file or directory: 'rg'")
+        return original_run(*args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = await agent_tool_service.execute("rg -n foo .")
+
+    assert "command: grep -R -n -- foo ." in result
+
+
+@pytest.mark.asyncio
+async def test_execute_falls_back_to_grep_when_rg_missing_with_compact_flags(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_tool_service: AgentToolService,
+        fake_policy_service: FakePolicyService,
+) -> None:
+    fake_policy_service.responses["should_agent_run_command"] = True
+
+    original_run = subprocess.run
+
+    def fake_run(*args, **kwargs):
+        argv = args[0]
+        if argv[0] == "rg":
+            raise FileNotFoundError("[Errno 2] No such file or directory: 'rg'")
+        return original_run(*args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = await agent_tool_service.execute("rg -rn foo . --no-heading")
+
+    assert "command: grep -R -n -- foo ." in result
+
+
+@pytest.mark.asyncio
+async def test_execute_falls_back_to_grep_when_rg_missing_with_list_flag(
+        monkeypatch: pytest.MonkeyPatch,
+        agent_tool_service: AgentToolService,
+        fake_policy_service: FakePolicyService,
+) -> None:
+    fake_policy_service.responses["should_agent_run_command"] = True
+
+    original_run = subprocess.run
+
+    def fake_run(*args, **kwargs):
+        argv = args[0]
+        if argv[0] == "rg":
+            raise FileNotFoundError("[Errno 2] No such file or directory: 'rg'")
+        return original_run(*args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = await agent_tool_service.execute("rg -n foo . --no-heading -l")
+
+    assert "command: grep -R -n -l -- foo ." in result

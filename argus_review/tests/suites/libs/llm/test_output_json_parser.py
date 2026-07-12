@@ -147,6 +147,16 @@ def test_parse_output_with_multiple_json_blocks(llm_output_json_parser: LLMOutpu
     assert result.text == "first"
 
 
+def test_parse_output_with_inline_backtick_wrapped_json(llm_output_json_parser: LLMOutputJSONParser):
+    """Should unwrap single-backtick JSON payloads and parse successfully."""
+    output = '`{"text": "wrapped"}`'
+
+    result = llm_output_json_parser.parse_output(output)
+
+    assert isinstance(result, DummyModel)
+    assert result.text == "wrapped"
+
+
 def test_parse_output_with_extra_control_chars(llm_output_json_parser: LLMOutputJSONParser):
     """Should handle JSON polluted by invisible control characters."""
     raw = '{\x00"text": "ok\x07"}'

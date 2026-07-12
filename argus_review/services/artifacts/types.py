@@ -4,9 +4,7 @@ from typing import Protocol
 from argus_review.services.artifacts.schema.base import BaseArtifactSchema
 from argus_review.services.cost.schema import CostReportSchema
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 
 
 class ArtifactsServiceProtocol(Protocol):
@@ -44,16 +42,4 @@ class ArtifactsServiceProtocol(Protocol):
     # High-level: VCS Summary Comment
     # ==========================================
     async def save_vcs_summary(self, comment: SummaryCommentSchema) -> str | None:
-        ...
-
-    # ==========================================
-    # High-level: VCS Inline Reply
-    # ==========================================
-    async def save_vcs_inline_reply(self, thread_id: str, reply: InlineCommentReplySchema) -> str | None:
-        ...
-
-    # ==========================================
-    # High-level: VCS Summary Reply
-    # ==========================================
-    async def save_vcs_summary_reply(self, thread_id: str, reply: SummaryCommentReplySchema) -> str | None:
         ...

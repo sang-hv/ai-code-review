@@ -1,3 +1,4 @@
+from argus_review.config import settings
 from argus_review.libs.logger import get_logger
 from argus_review.services.conventions.service import get_conventions_service
 from argus_review.services.cost.types import CostServiceProtocol
@@ -12,8 +13,9 @@ from argus_review.services.review.internal.inline.line_validator import (
     compute_valid_lines_by_file,
     filter_by_valid_lines,
 )
-from argus_review.services.review.internal.inline.schema import InlineCommentSchema
+from argus_review.services.review.internal.inline.schema import InlineCommentListSchema, InlineCommentSchema
 from argus_review.services.review.internal.inline.types import InlineCommentServiceProtocol
+from argus_review.services.review.runner.chunk import _chunk
 from argus_review.services.review.runner.types import ReviewRunnerProtocol
 from argus_review.services.vcs.types import ReviewInfoSchema, VCSClientProtocol
 
@@ -65,7 +67,29 @@ class AgentInlineReviewRunner(ReviewRunnerProtocol):
             review_info: ReviewInfoSchema,
     ) -> list[InlineCommentSchema]:
         valid_map = self._valid_lines_by_file(review_info)
-        return filter_by_valid_lines(comments, valid_map)
+        return filter_by_valid_lines(comments, valid_map, review_info.changed_files)
+
+    async def _review_chunk(
+            self,
+            review_info: ReviewInfoSchema,
+            files: list[str],
+            inventory: str,
+    ) -> list[InlineCommentSchema]:
+        """Run one agent session (clean context) for a single chunk of files."""
+        chunk_review_info = review_info.model_copy(deep=True)
+        chunk_review_info.changed_files = files
+
+        prompt_context = build_prompt_context_from_review_info(chunk_review_info)
+        prompt = self.prompt.build_agent_light_inline_request(
+            context=prompt_context,
+            base_sha=chunk_review_info.base_sha,
+            head_sha=chunk_review_info.head_sha,
+            conventions_inventory=inventory,
+        )
+        prompt_system = self.prompt.build_system_agent_light_inline_request()
+        prompt_result = await self.review_agent_llm_gateway.ask(prompt, prompt_system)
+
+        return self.inline_comment.parse_model_output(prompt_result).root
 
     async def run(self) -> None:
         await hook.emit_inline_review_start()
@@ -81,22 +105,20 @@ class AgentInlineReviewRunner(ReviewRunnerProtocol):
             logger.info("No files to review for agent inline")
             return
 
-        logger.info(f"Starting agent inline review: {len(changed_files)} files changed")
+        chunks = _chunk(changed_files, settings.agent.max_files_per_chunk)
+        logger.info(
+            f"Starting agent inline review: {len(changed_files)} files changed in {len(chunks)} chunk(s)"
+        )
 
         review_info.changed_files = changed_files
         inventory = get_conventions_service().materialize("inline")
-        prompt_context = build_prompt_context_from_review_info(review_info)
 
-        prompt = self.prompt.build_agent_light_inline_request(
-            context=prompt_context,
-            base_sha=review_info.base_sha,
-            head_sha=review_info.head_sha,
-            conventions_inventory=inventory,
-        )
-        prompt_system = self.prompt.build_system_agent_light_inline_request()
-        prompt_result = await self.review_agent_llm_gateway.ask(prompt, prompt_system)
+        all_comments: list[InlineCommentSchema] = []
+        for index, files in enumerate(chunks, 1):
+            logger.info(f"Reviewing chunk {index}/{len(chunks)} ({len(files)} files)")
+            all_comments.extend(await self._review_chunk(review_info, files, inventory))
 
-        parsed = self.inline_comment.parse_model_output(prompt_result).dedupe()
+        parsed = InlineCommentListSchema(root=all_comments).dedupe()
         parsed.root = self._validate_line_numbers(parsed.root, review_info)
         parsed.root = self.policy.apply_for_inline_comments(parsed.root)
         if not parsed.root:

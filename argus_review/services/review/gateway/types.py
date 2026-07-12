@@ -4,10 +4,8 @@ from argus_review.services.artifacts.types import ArtifactsServiceProtocol
 from argus_review.services.cost.types import CostServiceProtocol
 from argus_review.services.llm.types import LLMClientProtocol
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema, InlineCommentListSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
-from argus_review.services.vcs.types import VCSClientProtocol, ReviewThreadSchema, ReviewCommentSchema
+from argus_review.services.vcs.types import VCSClientProtocol, ReviewCommentSchema
 
 
 class ReviewLLMGatewayProtocol(Protocol):
@@ -23,22 +21,10 @@ class ReviewCommentGatewayProtocol(Protocol):
     vcs: VCSClientProtocol
     artifacts: ArtifactsServiceProtocol
 
-    async def get_inline_threads(self) -> list[ReviewThreadSchema]:
-        ...
-
-    async def get_summary_threads(self) -> list[ReviewThreadSchema]:
-        ...
-
     async def get_inline_comments(self) -> list[ReviewCommentSchema]:
         ...
 
     async def get_summary_comments(self) -> list[ReviewCommentSchema]:
-        ...
-
-    async def process_inline_reply(self, thread_id: str, reply: InlineCommentReplySchema) -> None:
-        ...
-
-    async def process_summary_reply(self, thread_id: str, reply: SummaryCommentReplySchema) -> None:
         ...
 
     async def process_inline_comment(self, comment: InlineCommentSchema) -> None:

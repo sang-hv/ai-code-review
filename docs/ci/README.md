@@ -7,7 +7,7 @@ Each example shows how to:
 
 - Install and configure ArgusReview
 - Pass LLM and VCS credentials securely via environment variables
-- Trigger inline, summary, or context review commands
+- Trigger agent review commands (`run-agent`, `run-agent-inline`, `run-agent-summary`)
 
 ---
 
@@ -17,7 +17,7 @@ Each example shows how to:
 |--------------|------------------------------------------|--------------------------------------------------------------------------------------|
 | GitHub       | [github.yaml](./github.yaml)             | Manual workflow dispatch from Actions tab                                            |
 | GitLab       | [gitlab.yaml](./gitlab.yaml)             | Manual job trigger in Merge Request pipelines                                        |
-| Jenkins      | [Jenkinsfile](./Jenkinsfile)             | Declarative pipeline with **inline/context/summary** review stages                  |
+| Jenkins      | [Jenkinsfile](./Jenkinsfile)             | Declarative pipeline running the **run-agent** review stage                         |
 | Bitbucket    | [bitbucket.yaml](./bitbucket.yaml)       | Manual custom pipeline trigger per Pull Request (supports all ArgusReview modes)     |
 | Azure DevOps | [azure-devops.yaml](./azure-devops.yaml) | Manual or PR-triggered pipeline in **Azure Pipelines**                               |
 

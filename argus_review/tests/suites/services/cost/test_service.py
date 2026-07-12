@@ -96,3 +96,18 @@ def test_aggregate_combines_multiple_reports(cost_service: CostService, sample_r
     assert pytest.approx(agg.total_cost, 1e-8) == 0.004
 
     assert agg.model == "gpt-4-test"
+
+
+def test_calculate_resolves_pricing_for_prefixed_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("argus_review.config.settings.llm.meta.model", "opencode/gpt-4-test")
+    monkeypatch.setattr(
+        LLMConfigBase,
+        "load_pricing",
+        lambda self: {"gpt-4-test": LLMPricingConfig(input=0.000001, output=0.000002)}
+    )
+
+    service = CostService()
+    out = service.calculate(CalculateCostSchema(prompt_tokens=10, completion_tokens=5))
+
+    assert out is not None
+    assert out.model == "opencode/gpt-4-test"

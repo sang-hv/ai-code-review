@@ -2,9 +2,7 @@ from pydantic import BaseModel
 
 from argus_review.services.artifacts.schema.base import BaseArtifactSchema, ArtifactType
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 
 
 class VCSInlineArtifactDataSchema(BaseModel):
@@ -15,27 +13,9 @@ class VCSSummaryArtifactDataSchema(BaseModel):
     summary_comment: SummaryCommentSchema
 
 
-class VCSInlineReplyArtifactDataSchema(BaseModel):
-    thread_id: str | int
-    inline_comment_reply: InlineCommentReplySchema
-
-
-class VCSSummaryReplyArtifactDataSchema(BaseModel):
-    thread_id: str | int
-    summary_comment_reply: SummaryCommentReplySchema
-
-
 class VCSInlineArtifactSchema(BaseArtifactSchema[VCSInlineArtifactDataSchema]):
     type: ArtifactType = ArtifactType.VCS_INLINE
 
 
 class VCSSummaryArtifactSchema(BaseArtifactSchema[VCSSummaryArtifactDataSchema]):
     type: ArtifactType = ArtifactType.VCS_SUMMARY
-
-
-class VCSInlineReplyArtifactSchema(BaseArtifactSchema[VCSInlineReplyArtifactDataSchema]):
-    type: ArtifactType = ArtifactType.VCS_INLINE_REPLY
-
-
-class VCSSummaryReplyArtifactSchema(BaseArtifactSchema[VCSSummaryReplyArtifactDataSchema]):
-    type: ArtifactType = ArtifactType.VCS_SUMMARY_REPLY

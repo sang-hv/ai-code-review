@@ -7,9 +7,9 @@ description: 'AI-powered code review tool'
 
 inputs:
   review-command:
-    default: 'run'
+    default: 'run-agent'
     required: false
-    description: 'Which review mode to run (run, run-inline, run-summary, run-context, run-agent, run-agent-inline, run-agent-summary)'
+    description: 'Which review mode to run (run-agent, run-agent-inline, run-agent-summary, clear-inline, clear-summary)'
   llm-provider:
     required: false
     description: 'Override LLM provider (OPENAI, CLAUDE, GEMINI, 9ROUTER, ...). Leave empty to use the committed config.'
@@ -50,7 +50,7 @@ runs:
         ARGUS_REVIEW="${{ github.action_path }}/.venv/bin/argus-review"
         "$ARGUS_REVIEW" show-config
         case "$REVIEW_COMMAND" in
-          run|run-inline|run-context|run-summary|run-inline-reply|run-summary-reply|clear-inline|clear-summary|run-agent|run-agent-inline|run-agent-summary)
+          run-agent|run-agent-inline|run-agent-summary|clear-inline|clear-summary)
             "$ARGUS_REVIEW" "$REVIEW_COMMAND"
             ;;
           *)

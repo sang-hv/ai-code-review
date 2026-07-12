@@ -13,18 +13,9 @@ from argus_review.services.hook.types import (
     # --- Inline Review ---
     InlineReviewStartHookFunc,
     InlineReviewCompleteHookFunc,
-    # --- Context Review ---
-    ContextReviewStartHookFunc,
-    ContextReviewCompleteHookFunc,
     # --- Summary Review ---
     SummaryReviewStartHookFunc,
     SummaryReviewCompleteHookFunc,
-    # --- Inline Reply Review ---
-    InlineReplyReviewStartHookFunc,
-    InlineReplyReviewCompleteHookFunc,
-    # --- Summary Reply Review ---
-    SummaryReplyReviewStartHookFunc,
-    SummaryReplyReviewCompleteHookFunc,
     # --- Inline Comment ---
     InlineCommentStartHookFunc,
     InlineCommentErrorHookFunc,
@@ -33,14 +24,6 @@ from argus_review.services.hook.types import (
     SummaryCommentStartHookFunc,
     SummaryCommentErrorHookFunc,
     SummaryCommentCompleteHookFunc,
-    # --- Inline Reply Comment ---
-    InlineCommentReplyStartHookFunc,
-    InlineCommentReplyErrorHookFunc,
-    InlineCommentReplyCompleteHookFunc,
-    # --- Summary Reply Comment ---
-    SummaryCommentReplyStartHookFunc,
-    SummaryCommentReplyErrorHookFunc,
-    SummaryCommentReplyCompleteHookFunc,
     # --- Clear Inline Comments ---
     ClearInlineCommentsStartHookFunc,
     ClearInlineCommentsErrorHookFunc,
@@ -51,9 +34,7 @@ from argus_review.services.hook.types import (
     ClearSummaryCommentsCompleteHookFunc,
 )
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 from argus_review.services.vcs.types import ReviewCommentSchema
 
 logger = get_logger("HOOK_SERVICE")
@@ -113,21 +94,6 @@ class HookService:
     async def emit_inline_review_complete(self, report: CostReportSchema | None):
         await self.emit(HookType.ON_INLINE_REVIEW_COMPLETE, report=report)
 
-    # --- Context Review ---
-    def on_context_review_start(self, func: ContextReviewStartHookFunc):
-        self.inject_hook(HookType.ON_CONTEXT_REVIEW_START, func)
-        return func
-
-    def on_context_review_complete(self, func: ContextReviewCompleteHookFunc):
-        self.inject_hook(HookType.ON_CONTEXT_REVIEW_COMPLETE, func)
-        return func
-
-    async def emit_context_review_start(self):
-        await self.emit(HookType.ON_CONTEXT_REVIEW_START)
-
-    async def emit_context_review_complete(self, report: CostReportSchema | None):
-        await self.emit(HookType.ON_CONTEXT_REVIEW_COMPLETE, report=report)
-
     # --- Summary Review ---
     def on_summary_review_start(self, func: SummaryReviewStartHookFunc):
         self.inject_hook(HookType.ON_SUMMARY_REVIEW_START, func)
@@ -142,36 +108,6 @@ class HookService:
 
     async def emit_summary_review_complete(self, report: CostReportSchema | None):
         await self.emit(HookType.ON_SUMMARY_REVIEW_COMPLETE, report=report)
-
-    # --- Inline Reply Review ---
-    def on_inline_reply_review_start(self, func: InlineReplyReviewStartHookFunc):
-        self.inject_hook(HookType.ON_INLINE_REPLY_REVIEW_START, func)
-        return func
-
-    def on_inline_reply_review_complete(self, func: InlineReplyReviewCompleteHookFunc):
-        self.inject_hook(HookType.ON_INLINE_REPLY_REVIEW_COMPLETE, func)
-        return func
-
-    async def emit_inline_reply_review_start(self):
-        await self.emit(HookType.ON_INLINE_REPLY_REVIEW_START)
-
-    async def emit_inline_reply_review_complete(self, report: CostReportSchema | None):
-        await self.emit(HookType.ON_INLINE_REPLY_REVIEW_COMPLETE, report=report)
-
-    # --- Summary Reply Review ---
-    def on_summary_reply_review_start(self, func: SummaryReplyReviewStartHookFunc):
-        self.inject_hook(HookType.ON_SUMMARY_REPLY_REVIEW_START, func)
-        return func
-
-    def on_summary_reply_review_complete(self, func: SummaryReplyReviewCompleteHookFunc):
-        self.inject_hook(HookType.ON_SUMMARY_REPLY_REVIEW_COMPLETE, func)
-        return func
-
-    async def emit_summary_reply_review_start(self):
-        await self.emit(HookType.ON_SUMMARY_REPLY_REVIEW_START)
-
-    async def emit_summary_reply_review_complete(self, report: CostReportSchema | None):
-        await self.emit(HookType.ON_SUMMARY_REPLY_REVIEW_COMPLETE, report=report)
 
     # --- Inline Comment ---
     def on_inline_comment_start(self, func: InlineCommentStartHookFunc):
@@ -216,50 +152,6 @@ class HookService:
 
     async def emit_summary_comment_complete(self, comment: SummaryCommentSchema):
         await self.emit(HookType.ON_SUMMARY_COMMENT_COMPLETE, comment=comment)
-
-    # --- Inline Reply Comment ---
-    def on_inline_comment_reply_start(self, func: InlineCommentReplyStartHookFunc):
-        self.inject_hook(HookType.ON_INLINE_COMMENT_REPLY_START, func)
-        return func
-
-    def on_inline_comment_reply_error(self, func: InlineCommentReplyErrorHookFunc):
-        self.inject_hook(HookType.ON_INLINE_COMMENT_REPLY_ERROR, func)
-        return func
-
-    def on_inline_comment_reply_complete(self, func: InlineCommentReplyCompleteHookFunc):
-        self.inject_hook(HookType.ON_INLINE_COMMENT_REPLY_COMPLETE, func)
-        return func
-
-    async def emit_inline_comment_reply_start(self, comment: InlineCommentReplySchema):
-        await self.emit(HookType.ON_INLINE_COMMENT_REPLY_START, comment=comment)
-
-    async def emit_inline_comment_reply_error(self, comment: InlineCommentReplySchema):
-        await self.emit(HookType.ON_INLINE_COMMENT_REPLY_ERROR, comment=comment)
-
-    async def emit_inline_comment_reply_complete(self, comment: InlineCommentReplySchema):
-        await self.emit(HookType.ON_INLINE_COMMENT_REPLY_COMPLETE, comment=comment)
-
-    # --- Inline Reply Comment ---
-    def on_summary_comment_reply_start(self, func: SummaryCommentReplyStartHookFunc):
-        self.inject_hook(HookType.ON_SUMMARY_COMMENT_REPLY_START, func)
-        return func
-
-    def on_summary_comment_reply_error(self, func: SummaryCommentReplyErrorHookFunc):
-        self.inject_hook(HookType.ON_SUMMARY_COMMENT_REPLY_ERROR, func)
-        return func
-
-    def on_summary_comment_reply_complete(self, func: SummaryCommentReplyCompleteHookFunc):
-        self.inject_hook(HookType.ON_SUMMARY_COMMENT_REPLY_COMPLETE, func)
-        return func
-
-    async def emit_summary_comment_reply_start(self, comment: SummaryCommentReplySchema):
-        await self.emit(HookType.ON_SUMMARY_COMMENT_REPLY_START, comment=comment)
-
-    async def emit_summary_comment_reply_error(self, comment: SummaryCommentReplySchema):
-        await self.emit(HookType.ON_SUMMARY_COMMENT_REPLY_ERROR, comment=comment)
-
-    async def emit_summary_comment_reply_complete(self, comment: SummaryCommentReplySchema):
-        await self.emit(HookType.ON_SUMMARY_COMMENT_REPLY_COMPLETE, comment=comment)
 
     # --- Clear Inline Comments ---
     def on_clear_inline_comments_start(self, func: ClearInlineCommentsStartHookFunc):

@@ -4,9 +4,7 @@ from argus_review.services.cost.schema import CostReportSchema
 from argus_review.services.hook.constants import HookType
 from argus_review.services.hook.service import HookService
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 from argus_review.services.vcs.types import ReviewCommentSchema, UserSchema
 
 user = UserSchema(id="u1", username="tester", name="Tester")
@@ -19,9 +17,7 @@ cost_report = CostReportSchema(
     output_cost=0.2
 )
 inline_comment = InlineCommentSchema(file="a.py", line=1, message="fix this")
-inline_reply = InlineCommentReplySchema(message="ok", suggestion="use helper()")
 summary_comment = SummaryCommentSchema(text="summary text")
-summary_reply = SummaryCommentReplySchema(text="reply summary")
 review_comments = [
     ReviewCommentSchema(id="c1", body="Developer reply 1", file="file1.py", line=1, author=user),
     ReviewCommentSchema(id="c2", body="Developer reply 2", file="file2.py", line=2, author=user),
@@ -38,21 +34,9 @@ HOOK_CASES = [
     ("on_inline_review_start", "emit_inline_review_start", {}),
     ("on_inline_review_complete", "emit_inline_review_complete", dict(report=cost_report)),
 
-    # Context Review
-    ("on_context_review_start", "emit_context_review_start", {}),
-    ("on_context_review_complete", "emit_context_review_complete", dict(report=cost_report)),
-
     # Summary Review
     ("on_summary_review_start", "emit_summary_review_start", {}),
     ("on_summary_review_complete", "emit_summary_review_complete", dict(report=cost_report)),
-
-    # Inline Reply Review
-    ("on_inline_reply_review_start", "emit_inline_reply_review_start", {}),
-    ("on_inline_reply_review_complete", "emit_inline_reply_review_complete", dict(report=cost_report)),
-
-    # Summary Reply Review
-    ("on_summary_reply_review_start", "emit_summary_reply_review_start", {}),
-    ("on_summary_reply_review_complete", "emit_summary_reply_review_complete", dict(report=cost_report)),
 
     # Inline Comment
     ("on_inline_comment_start", "emit_inline_comment_start", dict(comment=inline_comment)),
@@ -63,16 +47,6 @@ HOOK_CASES = [
     ("on_summary_comment_start", "emit_summary_comment_start", dict(comment=summary_comment)),
     ("on_summary_comment_error", "emit_summary_comment_error", dict(comment=summary_comment)),
     ("on_summary_comment_complete", "emit_summary_comment_complete", dict(comment=summary_comment)),
-
-    # Inline Comment Reply
-    ("on_inline_comment_reply_start", "emit_inline_comment_reply_start", dict(comment=inline_reply)),
-    ("on_inline_comment_reply_error", "emit_inline_comment_reply_error", dict(comment=inline_reply)),
-    ("on_inline_comment_reply_complete", "emit_inline_comment_reply_complete", dict(comment=inline_reply)),
-
-    # Summary Comment Reply
-    ("on_summary_comment_reply_start", "emit_summary_comment_reply_start", dict(comment=summary_reply)),
-    ("on_summary_comment_reply_error", "emit_summary_comment_reply_error", dict(comment=summary_reply)),
-    ("on_summary_comment_reply_complete", "emit_summary_comment_reply_complete", dict(comment=summary_reply)),
 
     # Clear Inline Comments
     ("on_clear_inline_comments_start", "emit_clear_inline_comments_start", {}),

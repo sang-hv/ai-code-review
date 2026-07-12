@@ -53,48 +53,6 @@ def test_resolve_system_prompt_files_include_false(monkeypatch: pytest.MonkeyPat
     assert result == [custom_file]
 
 
-# ---------- Prompts ---------
-
-def test_load_context_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "context.md"
-    dummy_file.write_text("CTX")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.context_prompt_files_or_default == [dummy_file]
-    assert config.load_context() == ["CTX"]
-
-
-def test_load_summary_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "summary.md"
-    dummy_file.write_text("SUM")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.summary_prompt_files_or_default == [dummy_file]
-    assert config.load_summary() == ["SUM"]
-
-
-def test_load_inline_reply_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "inline_reply.md"
-    dummy_file.write_text("INL_R")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.inline_reply_prompt_files_or_default == [dummy_file]
-    assert config.load_inline_reply() == ["INL_R"]
-
-
-def test_load_summary_reply_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "summary_reply.md"
-    dummy_file.write_text("SUM_R")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.summary_reply_prompt_files_or_default == [dummy_file]
-    assert config.load_summary_reply() == ["SUM_R"]
-
-
 # ---------- Agent Prompts ----------
 
 def test_load_agent_prompts_from_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -117,46 +75,6 @@ def test_load_agent_prompts_from_custom_files(tmp_path: Path):
 
 
 # ---------- System Prompts ----------
-
-def test_load_system_context_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "sys_context.md"
-    dummy_file.write_text("SYS_CTX")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.system_context_prompt_files_or_default == [dummy_file]
-    assert config.load_system_context() == ["SYS_CTX"]
-
-
-def test_load_system_summary_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "sys_summary.md"
-    dummy_file.write_text("SYS_SUM")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.system_summary_prompt_files_or_default == [dummy_file]
-    assert config.load_system_summary() == ["SYS_SUM"]
-
-
-def test_load_system_inline_reply_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "sys_inline_reply.md"
-    dummy_file.write_text("SYS_IR")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.system_inline_reply_prompt_files_or_default == [dummy_file]
-    assert config.load_system_inline_reply() == ["SYS_IR"]
-
-
-def test_load_system_summary_reply_prompts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    dummy_file = tmp_path / "sys_summary_reply.md"
-    dummy_file.write_text("SYS_SR")
-    monkeypatch.setattr("argus_review.libs.config.prompt.load_resource", lambda **_: dummy_file)
-
-    config = PromptConfig()
-    assert config.system_summary_reply_prompt_files_or_default == [dummy_file]
-    assert config.load_system_summary_reply() == ["SYS_SR"]
-
 
 def test_load_system_agent_prompts_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     global_file = tmp_path / "global_sys_agent.md"

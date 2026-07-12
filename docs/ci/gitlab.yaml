@@ -6,7 +6,7 @@
   rules:
     - if: '$CI_MERGE_REQUEST_IID'
   script:
-    - argus-review run
+    - argus-review run-agent
   variables:
     # Required: fetch full history so that git diff between base and head SHAs works correctly.
     GIT_DEPTH: 0
@@ -115,11 +115,17 @@
     # (ls, cat, rg, git) to explore the repo before producing the review.
     # Works best with stronger models (gpt-4.1, claude-3-opus, etc.).
     #
-    # AGENT__ENABLED: "true"
+    # The run-agent* commands always drive the agent loop; these tune it.
     # AGENT__MAX_ITERATIONS: "25"
     # AGENT__COMMAND_TIMEOUT: "10"
     # AGENT__MAX_TOTAL_CONTEXT_CHARS: "40000"
     # AGENT__MAX_COMMAND_OUTPUT_CHARS: "40000"
+    # AGENT__MAX_HISTORY_CHARS: "24000"
+    # Compaction: summarize history instead of cutting off when near the limit.
+    # AGENT__COMPACTION_ENABLED: "true"
+    # AGENT__COMPACTION_THRESHOLD_RATIO: "0.8"
+    # Chunking: split large MRs into batches of N files (0 = disabled).
+    # AGENT__MAX_FILES_PER_CHUNK: "10"
 
     # ===============================
     # Prompts (optional overrides)
@@ -276,29 +282,14 @@
   allow_failure: true  # Optional: don't block pipeline if AI review fails
 
 
-.argus-review-inline:
+.argus-review-agent-inline:
   script:
-    - argus-review run-inline
+    - argus-review run-agent-inline
   extends: .argus-review-base
 
-.argus-review-context:
+.argus-review-agent-summary:
   script:
-    - argus-review run-context
-  extends: .argus-review-base
-
-.argus-review-summary:
-  script:
-    - argus-review run-summary
-  extends: .argus-review-base
-
-.argus-review-inline-reply:
-  script:
-    - argus-review run-inline-reply
-  extends: .argus-review-base
-
-.argus-review-summary-reply:
-  script:
-    - argus-review run-summary-reply
+    - argus-review run-agent-summary
   extends: .argus-review-base
 
 .argus-review-clear-inline:

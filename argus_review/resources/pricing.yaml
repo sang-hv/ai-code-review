@@ -37,6 +37,14 @@ gpt-5.2:
   input: 1.70e-6
   output: 13.60e-6
 
+glm-5.2:
+  input: 1.70e-6
+  output: 13.60e-6
+
+deepseek-v4-pro:
+  input: 1.20e-6
+  output: 4.80e-6
+
 gpt-3.5-turbo:
   input: 0.40e-6
   output: 1.20e-6

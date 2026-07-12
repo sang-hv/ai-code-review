@@ -4,9 +4,7 @@ from argus_review.services.artifacts.types import ArtifactsServiceProtocol
 from argus_review.services.hook import hook
 from argus_review.services.review.gateway.review_comment_gateway import ReviewCommentGateway
 from argus_review.services.review.internal.inline.schema import InlineCommentListSchema, InlineCommentSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
 from argus_review.services.vcs.types import VCSClientProtocol
 
 logger = get_logger("REVIEW_DRY_RUN_COMMENT_GATEWAY")
@@ -16,20 +14,6 @@ class ReviewDryRunCommentGateway(ReviewCommentGateway):
     def __init__(self, vcs: VCSClientProtocol, artifacts: ArtifactsServiceProtocol):
         super().__init__(vcs=vcs, artifacts=artifacts)
         logger.warning("Running in DRY RUN mode — no comments will be posted to VCS")
-
-    async def process_inline_reply(self, thread_id: str, reply: InlineCommentReplySchema) -> None:
-        await hook.emit_inline_comment_reply_start(reply)
-        logger.info(f"[dry-run] Would create inline reply for thread {thread_id}:\n{reply.body_with_tag}")
-        await hook.emit_inline_comment_reply_complete(reply)
-
-        await self.artifacts.save_vcs_inline_reply(thread_id, reply)
-
-    async def process_summary_reply(self, thread_id: str, reply: SummaryCommentReplySchema) -> None:
-        await hook.emit_summary_comment_reply_start(reply)
-        logger.info(f"[dry-run] Would create summary reply for thread {thread_id}:\n{reply.body_with_tag}")
-        await hook.emit_summary_comment_reply_complete(reply)
-
-        await self.artifacts.save_vcs_summary_reply(thread_id, reply)
 
     async def process_inline_comment(self, comment: InlineCommentSchema) -> None:
         await hook.emit_inline_comment_start(comment)

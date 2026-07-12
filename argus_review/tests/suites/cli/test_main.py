@@ -66,12 +66,6 @@ def test_cli_module_import_does_not_require_config_file(tmp_path):
 
 @pytest.fixture(autouse=True)
 def dummy_review_service(monkeypatch: pytest.MonkeyPatch, review_service: ReviewService):
-    monkeypatch.setattr("argus_review.cli.commands.run_review.ReviewService", lambda: review_service)
-    monkeypatch.setattr("argus_review.cli.commands.run_inline_review.ReviewService", lambda: review_service)
-    monkeypatch.setattr("argus_review.cli.commands.run_context_review.ReviewService", lambda: review_service)
-    monkeypatch.setattr("argus_review.cli.commands.run_summary_review.ReviewService", lambda: review_service)
-    monkeypatch.setattr("argus_review.cli.commands.run_inline_reply_review.ReviewService", lambda: review_service)
-    monkeypatch.setattr("argus_review.cli.commands.run_summary_reply_review.ReviewService", lambda: review_service)
     monkeypatch.setattr("argus_review.cli.commands.run_agent_review.ReviewService", lambda: review_service)
     monkeypatch.setattr("argus_review.cli.commands.run_agent_inline_review.ReviewService", lambda: review_service)
     monkeypatch.setattr("argus_review.cli.commands.run_agent_summary_review.ReviewService", lambda: review_service)
@@ -80,12 +74,6 @@ def dummy_review_service(monkeypatch: pytest.MonkeyPatch, review_service: Review
 @pytest.mark.parametrize(
     "args, expected_output",
     [
-        (["run"], "Starting full AI review..."),
-        (["run-inline"], "Starting inline AI review..."),
-        (["run-context"], "Starting context AI review..."),
-        (["run-summary"], "Starting summary AI review..."),
-        (["run-inline-reply"], "Starting inline reply AI review..."),
-        (["run-summary-reply"], "Starting summary reply AI review..."),
         (["run-agent"], "Starting agent-light AI review..."),
         (["run-agent-inline"], "Starting agent-light inline AI review..."),
         (["run-agent-summary"], "Starting agent-light summary AI review..."),

@@ -5,7 +5,7 @@ on:
     inputs:
       review-command:
         type: string
-        default: "run"
+        default: "run-agent"
         required: true
       pull-request-number:
         type: string

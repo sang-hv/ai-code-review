@@ -21,14 +21,10 @@ vcs:
     api_token: "token"
 
 prompt:
-  inline_prompt_files:
-    - ./argus_review/prompts/default_inline.md
-  summary_prompt_files:
-    - ./argus_review/prompts/default_summary.md
-  system_inline_prompt_files:
-    - ./argus_review/prompts/default_system_inline.md
-  system_summary_prompt_files:
-    - ./argus_review/prompts/default_system_summary.md
+  agent_prompt_files:
+    - ./argus_review/prompts/default_agent.md
+  system_agent_prompt_files:
+    - ./argus_review/prompts/default_system_agent.md
 
 review:
   mode: "FULL_FILE_DIFF"

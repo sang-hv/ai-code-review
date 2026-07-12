@@ -9,7 +9,10 @@ logger = get_logger("INLINE_LINE_VALIDATOR")
 
 
 def normalize_file(value: str) -> str:
-    return (value or "").strip().replace("\\", "/").lstrip("/")
+    path = (value or "").strip().replace("\\", "/").lstrip("/")
+    if path.startswith("a/") or path.startswith("b/"):
+        return path[2:]
+    return path
 
 
 def compute_valid_lines_by_file(
@@ -43,24 +46,39 @@ def compute_valid_lines_by_file(
 def filter_by_valid_lines(
         comments: list[InlineCommentSchema],
         valid_map: dict[str, set[int]],
+    changed_files: list[str] | None = None,
 ) -> list[InlineCommentSchema]:
     """
-    Drop any comment whose (file, line) does not anchor to a real new-side diff
-    line (the VCS would reject it anyway). Lenient (keeps everything) when
-    `valid_map` is empty, e.g. because the diff could not be parsed.
+    Drop any comment whose file is not part of changed files, and when a diff
+    line map is available also drop comments whose (file, line) does not anchor
+    to a real new-side diff line.
+
+    If `valid_map` is empty (e.g. diff parse failure), line validation is
+    skipped but changed-file validation still applies.
     """
-    if not valid_map:
-        return comments
+    allowed_files = {normalize_file(path) for path in (changed_files or []) if normalize_file(path)}
 
     kept: list[InlineCommentSchema] = []
     dropped = 0
     for comment in comments:
-        valid_lines = valid_map.get(normalize_file(comment.file))
-        if valid_lines is not None and comment.line in valid_lines:
+        comment_file = normalize_file(comment.file)
+
+        if allowed_files and comment_file not in allowed_files:
+            dropped += 1
+            logger.info(f"Dropping inline comment for non-changed file: {comment.file}:{comment.line}")
+            continue
+
+        if not valid_map:
             kept.append(comment)
-        else:
+            continue
+
+        valid_lines = valid_map.get(comment_file)
+        if valid_lines is None or comment.line not in valid_lines:
             dropped += 1
             logger.info(f"Dropping inline comment with non-diff line anchor: {comment.file}:{comment.line}")
+            continue
+
+        kept.append(comment)
 
     if dropped:
         logger.info(f"Dropped {dropped} inline comment(s) that did not anchor to a diff line")

@@ -3,70 +3,10 @@ import pytest
 from argus_review.config import settings
 from argus_review.services.review.gateway.review_comment_gateway import ReviewCommentGateway
 from argus_review.services.review.internal.inline.schema import InlineCommentSchema, InlineCommentListSchema
-from argus_review.services.review.internal.inline_reply.schema import InlineCommentReplySchema
 from argus_review.services.review.internal.summary.schema import SummaryCommentSchema
-from argus_review.services.review.internal.summary_reply.schema import SummaryCommentReplySchema
-from argus_review.services.vcs.types import ReviewThreadSchema, ReviewCommentSchema, ThreadKind
+from argus_review.services.vcs.types import ReviewCommentSchema
 from argus_review.tests.fixtures.services.artifacts import FakeArtifactsService
 from argus_review.tests.fixtures.services.vcs import FakeVCSClient
-
-
-# === INLINE THREADS ===
-
-@pytest.mark.asyncio
-async def test_get_inline_threads_filters_by_tag(
-        fake_vcs_client: FakeVCSClient,
-        review_comment_gateway: ReviewCommentGateway,
-):
-    """Should return only threads containing AI inline tags."""
-    threads = [
-        ReviewThreadSchema(
-            id="1",
-            kind=ThreadKind.INLINE,
-            file="a.py",
-            comments=[ReviewCommentSchema(id="1", body=f"Hello {settings.review.inline_reply_tag}")]
-        ),
-        ReviewThreadSchema(
-            id="2",
-            kind=ThreadKind.INLINE,
-            file="b.py",
-            comments=[ReviewCommentSchema(id="2", body="No AI tag here")]
-        ),
-    ]
-    fake_vcs_client.responses["get_inline_threads"] = threads
-
-    result = await review_comment_gateway.get_inline_threads()
-
-    assert len(result) == 1
-    assert result[0].id == "1"
-    assert any(call[0] == "get_inline_threads" for call in fake_vcs_client.calls)
-
-
-@pytest.mark.asyncio
-async def test_get_summary_threads_filters_by_tag(
-        fake_vcs_client: FakeVCSClient,
-        review_comment_gateway: ReviewCommentGateway,
-):
-    """Should return only threads containing AI summary tags."""
-    threads = [
-        ReviewThreadSchema(
-            id="10",
-            kind=ThreadKind.SUMMARY,
-            comments=[ReviewCommentSchema(id="1", body=f"AI {settings.review.summary_reply_tag}")]
-        ),
-        ReviewThreadSchema(
-            id="11",
-            kind=ThreadKind.SUMMARY,
-            comments=[ReviewCommentSchema(id="2", body="No tags here")]
-        ),
-    ]
-    fake_vcs_client.responses["get_general_threads"] = threads
-
-    result = await review_comment_gateway.get_summary_threads()
-
-    assert len(result) == 1
-    assert result[0].id == "10"
-    assert any(call[0] == "get_general_threads" for call in fake_vcs_client.calls)
 
 
 # === GET INLINE COMMENTS ===
@@ -141,83 +81,6 @@ async def test_get_summary_comments_returns_empty_when_no_ai_comments(
     assert result == []
 
 
-# === INLINE REPLY ===
-
-@pytest.mark.asyncio
-async def test_process_inline_reply_happy_path(
-        fake_vcs_client: FakeVCSClient,
-        fake_artifacts_service: FakeArtifactsService,
-        review_comment_gateway: ReviewCommentGateway,
-):
-    """Should create inline reply and emit hook events."""
-    reply = InlineCommentReplySchema(message="AI reply text")
-
-    await review_comment_gateway.process_inline_reply("t1", reply)
-
-    assert any(call[0] == "create_inline_reply" for call in fake_vcs_client.calls)
-
-    assert ("save_vcs_inline_reply", {"thread_id": "t1", "reply": reply}) in fake_artifacts_service.calls
-
-
-@pytest.mark.asyncio
-async def test_process_inline_reply_error(
-        capsys: pytest.CaptureFixture,
-        fake_vcs_client: FakeVCSClient,
-        fake_artifacts_service: FakeArtifactsService,
-        review_comment_gateway: ReviewCommentGateway,
-):
-    """Should log and emit error if VCS fails to create reply."""
-
-    async def failing_create_inline_reply(thread_id: str, body: str):
-        raise RuntimeError("API error")
-
-    fake_vcs_client.create_inline_reply = failing_create_inline_reply
-
-    reply = InlineCommentReplySchema(message="AI reply text")
-    await review_comment_gateway.process_inline_reply("t1", reply)
-    output = capsys.readouterr().out
-
-    assert "Failed to create inline reply" in output
-
-    assert all(call[0] != "save_vcs_inline_reply" for call in fake_artifacts_service.calls)
-
-
-# === SUMMARY REPLY ===
-
-@pytest.mark.asyncio
-async def test_process_summary_reply_success(
-        fake_vcs_client: FakeVCSClient,
-        fake_artifacts_service: FakeArtifactsService,
-        review_comment_gateway: ReviewCommentGateway,
-):
-    """Should create summary reply comment."""
-    reply = SummaryCommentReplySchema(text="AI summary reply")
-    await review_comment_gateway.process_summary_reply("t42", reply)
-    assert any(call[0] == "create_summary_reply" for call in fake_vcs_client.calls)
-
-    assert ("save_vcs_summary_reply", {"thread_id": "t42", "reply": reply}) in fake_artifacts_service.calls
-
-
-@pytest.mark.asyncio
-async def test_process_summary_reply_error(
-        capsys: pytest.CaptureFixture,
-        fake_vcs_client: FakeVCSClient,
-        review_comment_gateway: ReviewCommentGateway,
-):
-    """Should log and emit error on exception in summary reply."""
-
-    async def failing_create_summary_reply(thread_id: str, body: str):
-        raise RuntimeError("Network fail")
-
-    fake_vcs_client.create_summary_reply = failing_create_summary_reply
-
-    reply = SummaryCommentReplySchema(text="AI summary reply")
-    await review_comment_gateway.process_summary_reply("t42", reply)
-    output = capsys.readouterr().out
-
-    assert "Failed to create summary reply" in output
-
-
 # === INLINE COMMENT ===
 
 @pytest.mark.asyncio
@@ -233,7 +96,6 @@ async def test_process_inline_comment_happy_path(
 
     assert ("save_vcs_inline", {"comment": comment}) in fake_artifacts_service.calls
     assert all(call[0] != "save_vcs_summary" for call in fake_artifacts_service.calls)
-    assert all(call[0] != "save_vcs_summary_reply" for call in fake_artifacts_service.calls)
 
 
 @pytest.mark.asyncio
